@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+# Certance Playwright Framework — pre-commit lint gate.
+#
+# Runs lint-staged over staged files: eslint --fix (machine-enforces the golden
+# rules) + prettier --write. Keeps the golden rules honest and stops AI-generator
+# drift from landing. Activated via core.hooksPath=.githooks (npm "prepare" script,
+# or `npm run setup:hooks`). Emergency bypass: git commit --no-verify
+#
+set -euo pipefail
+
+# Only run if lint-staged is installed (skip cleanly on a fresh clone pre-install).
+if [ -f node_modules/.bin/lint-staged ]; then
+  npx --no-install lint-staged
+else
+  echo "  (pre-commit: lint-staged not installed yet — run 'npm install'; skipping)"
+fi

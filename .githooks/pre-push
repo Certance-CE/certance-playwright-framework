@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+#
+# Certance Playwright Framework — client-side branch guardrail.
+#
+# Server-enforced branch protection needs GitHub Pro/Team on a private repo, so
+# this hook provides the same guarantees locally instead: it refuses to push
+# directly to a protected branch, force-push it, or delete it. The team workflow
+# is pull-request-only — push a feature branch and open a PR.
+#
+# Activated via `core.hooksPath=.githooks` (set automatically by `npm install`
+# through the package.json "prepare" script; or run `npm run setup:hooks`).
+#
+# Emergency bypass (use sparingly, e.g. a genuine hotfix): git push --no-verify
+#
+set -euo pipefail
+
+PROTECTED_BRANCHES="main master"
+ZERO="0000000000000000000000000000000000000000"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  branch="${remote_ref#refs/heads/}"
+
+  for protected in $PROTECTED_BRANCHES; do
+    if [ "$branch" = "$protected" ]; then
+      if [ "$local_sha" = "$ZERO" ]; then
+        echo "" >&2
+        echo "  ✋  Blocked: refusing to delete protected branch '$branch'." >&2
+        echo "" >&2
+        exit 1
+      fi
+      echo "" >&2
+      echo "  ✋  Blocked: direct push to protected branch '$branch'." >&2
+      echo "      Open a pull request from a feature branch instead:" >&2
+      echo "        git switch -c my-change && git push -u origin my-change" >&2
+      echo "      Emergency bypass (use sparingly): git push --no-verify" >&2
+      echo "" >&2
+      exit 1
+    fi
+  done
+done
+
+exit 0

@@ -1,0 +1,90 @@
+{
+  "name": "certance-playwright-framework",
+  "version": "1.0.0",
+  "description": "Certance Lens — a general, opinionated Playwright + BDD test-automation framework. Strict locator hierarchy, fixture-injected auth/data/network, web-first assertions, accessibility, contract, visual and performance checks, and an AI-agent skills base. Runnable out of the box against the TodoMVC demo; point BASE_URL at your own app.",
+  "keywords": [
+    "playwright",
+    "testing",
+    "test-automation",
+    "bdd",
+    "cucumber",
+    "typescript",
+    "end-to-end",
+    "e2e",
+    "page-object-model",
+    "accessibility"
+  ],
+  "homepage": "https://github.com/Certance-CE/certance-playwright-framework#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Certance-CE/certance-playwright-framework.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Certance-CE/certance-playwright-framework/issues"
+  },
+  "author": "Certance Advisory",
+  "license": "MIT",
+  "type": "commonjs",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
+    "setup:hooks": "git config core.hooksPath .githooks",
+    "test": "npm run bdd:gen && playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:examples": "playwright test tests/foundation.spec.ts tests/cleanup.spec.ts tests/contract.spec.ts tests/network.spec.ts --project=chromium",
+    "test:seed": "playwright test tests/seed.spec.ts --project=chromium",
+    "test:unit": "vitest run",
+    "test:mutation": "stryker run",
+    "bdd:gen": "bddgen",
+    "bdd:test": "npm run bdd:gen && playwright test --project=bdd:chromium",
+    "bdd:smoke": "npm run bdd:gen && playwright test --project=bdd:chromium --grep @smoke",
+    "bdd:regression": "npm run bdd:gen && playwright test --project=bdd:chromium --grep-invert @wip",
+    "coverage:requirements": "node scripts/requirements-coverage.js",
+    "perf:summary": "node scripts/perf-summary.js",
+    "ctrf:summary": "node scripts/ctrf-summary.js",
+    "validate:env": "node scripts/validate-env.js"
+  },
+  "lint-staged": {
+    "*.{ts,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "scripts/*.js": [
+      "eslint --fix"
+    ]
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@faker-js/faker": "^10.5.0",
+    "@playwright/test": "^1.62.1",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
+    "@types/node": "^26.2.0",
+    "allure-playwright": "^3.10.2",
+    "dotenv": "^17.4.2",
+    "eslint": "^10.8.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-playwright": "^2.11.0",
+    "lint-staged": "^17.3.0",
+    "playwright-bdd": "^9.2.0",
+    "playwright-ctrf-json-reporter": "^0.0.29",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10",
+    "web-vitals": "^6.1.1",
+    "zod": "^4.4.3"
+  }
+}
