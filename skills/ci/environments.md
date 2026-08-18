@@ -1,0 +1,95 @@
+# Environment Configuration
+
+Load this guide when: managing multiple deployment environments (staging, UAT,
+production-mirror), or configuring the suite for a new environment.
+
+---
+
+## Environment variables
+
+All environment-specific configuration uses `.env` files loaded by `dotenv`
+in `playwright.config.ts`. Never hard-code environment values.
+
+```
+.env            — local overrides (gitignored)
+.env.example    — committed template (no secrets, always up to date)
+```
+
+---
+
+## Environment-specific `.env` files (optional)
+
+For suites that run against multiple environments:
+
+```
+.env.staging    — staging environment
+.env.uat        — user acceptance testing
+.env.prod-mirror — production clone (read-only tests)
+```
+
+Load a specific env file:
+
+```bash
+ENV=staging npx dotenv -e .env.staging -- npx playwright test
+```
+
+Or using a custom script in `package.json`:
+
+```json
+{
+  "scripts": {
+    "test:staging": "dotenv -e .env.staging -- npx playwright test",
+    "test:uat": "dotenv -e .env.uat -- npx playwright test"
+  }
+}
+```
+
+---
+
+## Environment-safe configuration via `utils/env.ts`
+
+The `env` utility provides type-safe access and clear error messages when
+variables are missing:
+
+```typescript
+import { env } from '../utils/env';
+
+// Throws immediately with a helpful message if BASE_URL is not set
+await page.goto(env.baseUrl);
+```
+
+Never use `process.env.FOO` directly in tests — always go through `utils/env.ts`
+so missing variables are caught at startup, not mid-test.
+
+---
+
+## Environment registry
+
+Document all environments for the client in `docs/ENVIRONMENTS.md`:
+
+```markdown
+| Environment | URL                        | Used for               | Auth type         |
+| ----------- | -------------------------- | ---------------------- | ----------------- |
+| Staging     | https://staging.client.com | Developer + QA testing | Username/password |
+| UAT         | https://uat.client.com     | Stakeholder acceptance | Username/password |
+| Prod-mirror | https://mirror.client.com  | Read-only smoke tests  | SSO restricted    |
+```
+
+---
+
+## CI secrets per environment
+
+For GitHub Actions, create separate environments and secrets per deployment:
+
+1. Go to **Settings → Environments**
+2. Create: `staging`, `uat`
+3. Add secrets to each environment
+4. Reference in workflow:
+
+```yaml
+jobs:
+  test:
+    environment: staging
+    env:
+      BASE_URL: ${{ secrets.BASE_URL }}
+```

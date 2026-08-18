@@ -1,0 +1,37 @@
+# OS files
+.DS_Store
+
+# Environment
+.env
+
+# Node / Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+test-data/.auth/*.json
+
+# BDD generated specs
+.features-gen/
+
+# Allure
+/allure-results/
+/allure-report/
+.playwright-mcp/
+
+# CTRF report (feeds the CI job summary)
+/ctrf/
+
+# Requirement traceability matrix (generated)
+/requirements-coverage.md
+
+# Performance results (generated)
+perf-results/
+performance-report.md
+
+# Mutation testing (generated)
+reports/
+.stryker-tmp/
+stryker.log
