@@ -46,20 +46,20 @@ Or using a custom script in `package.json`:
 
 ---
 
-## Environment-safe configuration via `utils/env.ts`
+## Fail fast on missing configuration
 
-The `env` utility provides type-safe access and clear error messages when
-variables are missing:
+Read environment variables in `playwright.config.ts`, not scattered through tests, and give
+each one a sensible default or a clear error. Configuration problems should surface when the
+run starts, not halfway through a scenario:
 
 ```typescript
-import { env } from '../utils/env';
-
-// Throws immediately with a helpful message if BASE_URL is not set
-await page.goto(env.baseUrl);
+// playwright.config.ts
+const baseURL = process.env.BASE_URL || 'https://demo.playwright.dev';
 ```
 
-Never use `process.env.FOO` directly in tests — always go through `utils/env.ts`
-so missing variables are caught at startup, not mid-test.
+Never inline a secret in a test or commit one to the repo — inject credentials from your
+platform's secret manager and let the auth setup exchange them for a `storageState` artifact
+(see `skills/core/auth.md`).
 
 ---
 

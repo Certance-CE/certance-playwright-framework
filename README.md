@@ -85,3 +85,5 @@ The TodoMVC `TodoPage` + `features/todos.feature` are the reference example to m
 
 A quality-engineering framework by [Certance Advisory](https://www.certance.eu/). Contributions
 welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+MIT licensed ([LICENSE](./LICENSE)); third-party attributions in [NOTICE](./NOTICE).

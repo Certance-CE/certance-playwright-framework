@@ -13,7 +13,7 @@ Certance Playwright framework.
 | `cy.contains('text')`         | `page.getByText()` / `page.getByRole(role, { name: 'text' })` |
 | `cy.intercept()`              | `page.route()`                                                |
 | `cy.fixture()`                | `test-data/` JSON files + `utils/test-data.ts`                |
-| `Cypress.env()`               | `process.env.*` via `utils/env.ts`                            |
+| `Cypress.env()`               | `process.env.*`, read in `playwright.config.ts`               |
 | `beforeEach` hooks            | Playwright fixtures                                           |
 | `cy.session()`                | `storageState` in `playwright.config.ts`                      |
 | `cypress.config.ts`           | `playwright.config.ts`                                        |

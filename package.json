@@ -52,8 +52,7 @@
     "bdd:regression": "npm run bdd:gen && playwright test --project=bdd:chromium --grep-invert @wip",
     "coverage:requirements": "node scripts/requirements-coverage.js",
     "perf:summary": "node scripts/perf-summary.js",
-    "ctrf:summary": "node scripts/ctrf-summary.js",
-    "validate:env": "node scripts/validate-env.js"
+    "ctrf:summary": "node scripts/ctrf-summary.js"
   },
   "lint-staged": {
     "*.{ts,mjs}": [

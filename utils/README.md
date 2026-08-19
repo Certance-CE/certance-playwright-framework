@@ -10,9 +10,7 @@ across projects.
 
 | File             | Purpose                                                                    |
 | ---------------- | -------------------------------------------------------------------------- |
-| `env.ts`         | Type-safe access to environment variables with clear missing-value errors  |
 | `test-data.ts`   | `FakeFactory` — deterministic synthetic data generation (no external deps) |
-| `obfuscation.ts` | Simple Base64 obfuscation for test credentials (prevents casual viewing)   |
 
 ---
 

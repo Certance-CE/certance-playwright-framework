@@ -20,7 +20,11 @@ This is a test-automation framework. The most relevant risks are:
 
 ## Handling credentials
 
-The framework is designed to keep credentials out of source control: they are supplied via
-environment variables / CI secrets and captured into a `storageState` artifact that is never
-committed. If you must store a password locally, obfuscate it with `utils/obfuscation.ts` — but
-prefer environment injection.
+The framework is designed to keep credentials out of source control. They are supplied via
+environment variables / CI secrets, used once to sign in, and captured into a `storageState`
+artifact that is never committed (`test-data/.auth/` is git-ignored).
+
+**We deliberately ship no home-grown credential encoding.** Encoding a password so it is not
+human-readable is obfuscation, not encryption — it offers no real protection and invites treating
+an encoded secret as a safe one. Use your platform's secret manager (GitHub Actions secrets, Vault,
+AWS/GCP/Azure secret managers) and inject at runtime.
