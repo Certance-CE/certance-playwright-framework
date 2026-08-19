@@ -30,6 +30,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run check:docs
 
   # Unit tests + mutation testing over the framework's own logic (no browser, no secrets),
   # plus the SonarQube scan, which reuses the coverage this job already produces.

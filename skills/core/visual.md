@@ -32,10 +32,10 @@ yours once and commit them:
 npm run test:visual -- --update-snapshots
 ```
 
-Visual specs live in `tests/visual/*.visual.spec.ts`, run via `npm run test:visual`
-(the `chromium` project). They are **not** in the CI smoke/regression suites — wire
-them into a dedicated job once baselines exist for the CI platform (Linux). See
-`tests/visual/example.visual.spec.ts` for a runnable offline example.
+Put visual specs in `tests/visual/` as `*.visual.spec.ts` on the `chromium` project, and
+keep them **out** of the smoke and regression suites. Give them a dedicated job, and
+generate baselines on the CI platform (Linux) rather than on a developer machine —
+a baseline captured on macOS will never match the one CI compares against.
 
 ---
 

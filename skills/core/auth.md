@@ -115,7 +115,7 @@ Run selectively: `npx playwright test --project=bdd:admin --grep @as-admin`
 
 ## 4. Auth scenarios — clearing cookies
 
-Authentication feature tests (`features/authentication.feature`) test the
+Authentication feature tests (a `features/auth.feature` of your own) test the
 login UI itself. They must clear the saved auth state before running:
 
 ```typescript

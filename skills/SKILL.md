@@ -275,19 +275,19 @@ at once — load only what the current task requires.
 
 ### Core guides
 
-| Guide                                            | Load when                                                                                |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| [Locator strategy](./core/locators.md)           | Writing any selector or finding elements                                                 |
-| [Assertions](./core/assertions.md)               | Writing expect() statements                                                              |
-| [Authentication patterns](./core/auth.md)        | Any test requiring login                                                                 |
-| [Network mocking](./core/mocking.md)             | Intercepting API calls                                                                   |
-| [Fixtures and hooks](./core/fixtures.md)         | Setting up shared test state                                                             |
-| [Test data factory](./core/test-data.md)         | Generating or managing test data                                                         |
-| [Debugging and tracing](./core/debugging.md)     | Diagnosing test failures — run `npm run compress:output` before pasting output into chat |
-| [Parallel execution](./core/parallel.md)         | Sharding or worker configuration                                                         |
-| [Visual regression](./core/visual.md)            | Screenshot comparison tests                                                              |
-| [Accessibility testing](./core/accessibility.md) | WCAG / axe-core checks                                                                   |
-| [API testing](./core/api.md)                     | Using Playwright request context                                                         |
+| Guide                                            | Load when                                                                 |
+| ------------------------------------------------ | ------------------------------------------------------------------------- |
+| [Locator strategy](./core/locators.md)           | Writing any selector or finding elements                                  |
+| [Assertions](./core/assertions.md)               | Writing expect() statements                                               |
+| [Authentication patterns](./core/auth.md)        | Any test requiring login                                                  |
+| [Network mocking](./core/mocking.md)             | Intercepting API calls                                                    |
+| [Fixtures and hooks](./core/fixtures.md)         | Setting up shared test state                                              |
+| [Test data factory](./core/test-data.md)         | Generating or managing test data                                          |
+| [Debugging and tracing](./core/debugging.md)     | Diagnosing test failures, reading traces, and keeping agent context small |
+| [Parallel execution](./core/parallel.md)         | Sharding or worker configuration                                          |
+| [Visual regression](./core/visual.md)            | Screenshot comparison tests                                               |
+| [Accessibility testing](./core/accessibility.md) | WCAG / axe-core checks                                                    |
+| [API testing](./core/api.md)                     | Using Playwright request context                                          |
 
 ### CI / CD guides
 
@@ -387,7 +387,7 @@ See `playwright.config.ts`. Key decisions:
 ## Agent instruction files
 
 Each AI agent reads a different conventions file. All must exist in every project repo.
-See `.github/copilot-instructions.md`, `.claude/CLAUDE.md`, and `.cursorrules` for
+See `.github/copilot-instructions.md` for
 the canonical templates. All must enforce the same golden rules in each agent's native format.
 
 ---
@@ -402,9 +402,8 @@ running the Planner agent.
       no secrets). Add `TEST_USER_*` only if the app under test requires auth.
 - [ ] Run `npm install` and `npx playwright install --with-deps`
 - [ ] Run `npx playwright init-agents` to generate agent definitions
-- [ ] Create `.github/copilot-instructions.md`
-- [ ] Create `.claude/CLAUDE.md`
-- [ ] Create `.cursorrules`
+- [ ] Create an `AGENTS.md` at the repo root (the cross-tool standard) and a thin
+      `.github/copilot-instructions.md` pointing at it
 - [ ] If the app requires auth: write and verify an auth seed spec — must pass cleanly
 - [ ] Run Planner agent against the target environment
 - [ ] Review generated `plans/*.md` with the team
