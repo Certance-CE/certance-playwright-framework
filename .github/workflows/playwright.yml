@@ -25,12 +25,19 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
 
-  # Unit tests + mutation testing over the framework's own logic (no browser, no secrets).
+  # Unit tests + mutation testing over the framework's own logic (no browser, no secrets),
+  # plus the SonarQube scan, which reuses the coverage this job already produces.
   unit:
-    name: Unit + mutation
+    name: Unit + mutation + Sonar
     runs-on: ubuntu-latest
+    env:
+      # Read once at job level so the scan step can test for its presence below.
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Sonar attributes new code via git blame; a shallow clone breaks it.
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: lts/*
@@ -38,6 +45,18 @@ jobs:
       - run: npm ci
       - run: npm run test:unit
       - run: npm run test:mutation
+
+      # Skipped unless a SONAR_TOKEN secret exists, so the repo stays green before
+      # SonarQube Cloud is connected. Also skipped for Dependabot and fork PRs, which
+      # get a read-only token with no access to secrets — without this guard every
+      # Dependabot PR would show a red X.
+      - name: SonarQube scan
+        if: >-
+          env.SONAR_TOKEN != '' &&
+          github.actor != 'dependabot[bot]' &&
+          (github.event_name != 'pull_request' ||
+           github.event.pull_request.head.repo.full_name == github.repository)
+        uses: SonarSource/sonarqube-scan-action@v8.2.1
       - name: Upload mutation report
         if: always()
         uses: actions/upload-artifact@v7

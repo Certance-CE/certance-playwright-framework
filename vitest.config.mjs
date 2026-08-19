@@ -10,5 +10,14 @@ export default defineConfig({
   test: {
     include: ['unit/**/*.test.ts'],
     environment: 'node',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      reportsDirectory: './coverage',
+      // Scoped to the pure, dependency-free modules that unit tests can honestly
+      // reach. utils/performance.ts injects a script into a live page and
+      // utils/visual.ts needs a Page — both are covered by Playwright, not vitest.
+      include: ['utils/contract.ts', 'utils/test-data.ts'],
+    },
   },
 });

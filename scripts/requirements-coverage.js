@@ -139,7 +139,7 @@ function main() {
       JSON.stringify({
         uuid,
         historyId: crypto
-          .createHash('md5')
+          .createHash('sha256')
           .update('req:' + r.id)
           .digest('hex'),
         name: `${r.state === 'gap' ? 'Uncovered requirement' : 'Failing requirement'}: ${r.id} — ${r.title}`,

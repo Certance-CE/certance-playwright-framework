@@ -43,6 +43,31 @@ npm run bdd:smoke   # or `npm test` for the full BDD suite
 - Write a clear description of what changed and why.
 - Green CI (lint, unit, BDD) is required before merge.
 
+## Static analysis (SonarQube)
+
+The repo is set up for SonarQube Cloud analysis, which runs inside the `unit` CI job and
+reuses the coverage that job already produces. Configuration lives in
+[`sonar-project.properties`](./sonar-project.properties).
+
+**The scan skips itself until a `SONAR_TOKEN` secret exists**, so nothing is red before the
+project is connected. It is also skipped for Dependabot and fork pull requests, which run with a
+read-only token that cannot read secrets.
+
+To connect it (maintainers): import the repository into SonarQube Cloud (free for public
+repositories), set `sonar.organization` in `sonar-project.properties`, add the `SONAR_TOKEN`
+secret, and turn **Automatic Analysis off** in the project's Analysis Method settings — it cannot
+import coverage, and running it alongside CI analysis makes builds fail.
+
+Two deliberate choices in the configuration:
+
+- `pages/`, `fixtures/` and `utils/` are analysed as **source, not test code**. They are the
+  product, so they should carry reliability, security and maintainability ratings.
+- Those same paths are excluded from **coverage** only. They are exercised by a real browser
+  through Playwright, never by unit tests, so counting them in the coverage denominator would
+  make the gate noise instead of signal.
+
+---
+
 ## Reporting security issues
 
 Please do not open a public issue for security problems — see [SECURITY.md](./SECURITY.md).
