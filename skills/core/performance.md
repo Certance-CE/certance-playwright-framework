@@ -66,7 +66,7 @@ npm run perf:summary    # render the dedicated report
 
 ## CI note
 
-The harness runs fully offline (see `tests/performance/example.perf.spec.ts`).
+The harness runs fully offline, so a budget check needs no network of its own.
 **Real budgets need the live app** and journey-specific thresholds — wire a
 `test:perf` step into CI once budgets are tuned, and gate with
 `PERF_FAIL_ON_BUDGET=1`. Raw numbers on a fast CI box read optimistically; for a

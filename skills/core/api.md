@@ -26,9 +26,10 @@ test('a task created via API appears in the list', async ({ api, page, data }) =
 });
 ```
 
-API-only contract tests live in `tests/api/*.contract.spec.ts` (run via
-`npm run test:api`, the `chromium` project) and skip automatically unless
-`APP_API_TOKEN` is set. See `tests/api/example.contract.spec.ts`.
+API-only contract tests belong in `tests/api/` as `*.contract.spec.ts`, using the
+`chromium` project. Gate them on `APP_API_TOKEN` so they skip cleanly when no token is
+configured. The framework ships the `api` fixture and the schema validator; the specs
+themselves are yours to add for the API under test.
 
 ## Schema validation — catch provider drift (`utils/contract.ts`)
 
@@ -57,7 +58,7 @@ is the pure variant for a value you already have. Proven by `tests/contract.spec
 
 ## Running in CI
 
-The `api-contract` job (`.github/workflows/playwright.yml`) runs `npm run test:api`.
+Give contract tests their own CI job so a provider-side change is attributable at a glance, and gate that job on the API token being present.
 It needs **no browser auth** — just the API endpoint + token, configured per repo:
 
 | Value           | Where                                                                    | Why                                                              |
