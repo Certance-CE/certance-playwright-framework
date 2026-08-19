@@ -15,7 +15,7 @@ export default {
   packageManager: 'npm',
   testRunner: 'vitest',
   coverageAnalysis: 'perTest',
-  mutate: ['utils/contract.ts'],
+  mutate: ['utils/contract.ts', 'utils/test-data.ts'],
   reporters: ['html', 'clear-text', 'progress'],
   htmlReporter: { fileName: 'reports/mutation/index.html' },
   // CI gate: break the build if the mutation score drops below 70%.

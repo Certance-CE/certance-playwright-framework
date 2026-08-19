@@ -8,9 +8,9 @@ across projects.
 
 ## Current files
 
-| File             | Purpose                                                                    |
-| ---------------- | -------------------------------------------------------------------------- |
-| `test-data.ts`   | `FakeFactory` — deterministic synthetic data generation (no external deps) |
+| File           | Purpose                                                                    |
+| -------------- | -------------------------------------------------------------------------- |
+| `test-data.ts` | `FakeFactory` — deterministic synthetic data generation (no external deps) |
 
 ---
 
