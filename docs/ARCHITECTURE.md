@@ -70,8 +70,7 @@ Core design values:
 │  │     perf   (each .extend()s the previous)                     │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                                                     │
-│  utils/    contract · env · obfuscation · performance ·            │
-│            test-data · visual                                       │
+│  utils/    contract · performance · test-data · visual             │
 │  test-data/  static payloads · (optional) .auth/ storageState      │
 ├─────────────────────────────────────────────────────────────────────┤
 │                     CONFIGURATION LAYER                             │
