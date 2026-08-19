@@ -31,6 +31,7 @@
   },
   "scripts": {
     "prepare": "git config core.hooksPath .githooks || true",
+    "setup": "playwright install chromium",
     "setup:hooks": "git config core.hooksPath .githooks",
     "test": "npm run bdd:gen && playwright test",
     "test:headed": "playwright test --headed",
@@ -52,7 +53,8 @@
     "bdd:regression": "npm run bdd:gen && playwright test --project=bdd:chromium --grep-invert @wip",
     "coverage:requirements": "node scripts/requirements-coverage.js",
     "perf:summary": "node scripts/perf-summary.js",
-    "ctrf:summary": "node scripts/ctrf-summary.js"
+    "ctrf:summary": "node scripts/ctrf-summary.js",
+    "pretest": "node scripts/preflight.js"
   },
   "lint-staged": {
     "*.{ts,mjs}": [
@@ -86,5 +88,8 @@
     "vitest": "^4.1.10",
     "web-vitals": "^6.1.1",
     "zod": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
