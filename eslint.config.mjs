@@ -76,6 +76,63 @@ export default tseslint.config(
           selector: "CallExpression[callee.property.name='locator']",
           message: 'Golden rule #1: use getByRole/getByLabel/getByTestId — never .locator() (CSS/XPath).',
         },
+        {
+          selector: 'CallExpression[callee.property.name=/^\\$\\$?$/]',
+          message: 'Golden rule #1: page.$/page.$$ take CSS selectors — use getByRole/getByLabel/getByTestId.',
+        },
+      ],
+    },
+  },
+
+  // Golden rule #2 — every UI interaction lives in a Page Object.
+  //
+  // Scoped to test code only: pages/ is where these calls are supposed to be, and
+  // fixtures/ needs them to build reusable behaviour. A spec or step definition
+  // driving the page directly is the thing this rule exists to stop.
+  {
+    files: ['tests/**/*.ts', 'specs/**/*.ts', 'features/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='page'][callee.property.name=/^(click|dblclick|fill|type|press|check|uncheck|selectOption|hover|tap|focus|setInputFiles|dragAndDrop|selectText)$/]",
+          message:
+            'Golden rule #2: drive the UI through a Page Object in pages/, not directly from a spec or step definition.',
+        },
+        {
+          selector: "CallExpression[callee.property.name='locator']",
+          message: 'Golden rule #1: use getByRole/getByLabel/getByTestId — never .locator() (CSS/XPath).',
+        },
+        {
+          selector: 'CallExpression[callee.property.name=/^\\$\\$?$/]',
+          message: 'Golden rule #1: page.$/page.$$ take CSS selectors — use getByRole/getByLabel/getByTestId.',
+        },
+        {
+          selector: 'CallExpression[callee.property.name=/^(getByText|getByAltText|getByTitle)$/]',
+          message:
+            'Golden rule #1: text-based locators are brittle and belong behind a Page Object. Prefer getByRole/getByLabel/getByTestId.',
+        },
+      ],
+    },
+  },
+
+  // Golden rule #12 — the core stays application-agnostic. utils/ is shared
+  // machinery, so it must not reach into the app-specific layers.
+  {
+    files: ['utils/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/pages/*', '**/features/*', '../pages/*', '../features/*'],
+              message:
+                'Golden rule #12: utils/ is the application-agnostic core and must not depend on pages/ or features/.',
+            },
+          ],
+        },
       ],
     },
   },
