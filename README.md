@@ -22,9 +22,12 @@ npx playwright install chromium
 npm test
 ```
 
-That runs the BDD suite against the TodoMVC demo — no account, no secrets. To test **your**
-app, copy `.env.example` to `.env`, set `BASE_URL` to your app's origin, and replace `pages/`
-and `features/` with your own (the framework core doesn't change).
+That runs the BDD suite against the TodoMVC demo — no account, no secrets. Skip the browser
+step and the suite tells you exactly what to run rather than failing a dozen scenarios; `npm run
+setup` does the same thing if you prefer. Node 22 or newer (`.nvmrc` pins the version `nvm` picks).
+
+To test **your** app, copy `.env.example` to `.env`, set `BASE_URL` to your app's origin, and
+replace `pages/` and `features/` with your own (the framework core doesn't change).
 
 ---
 
