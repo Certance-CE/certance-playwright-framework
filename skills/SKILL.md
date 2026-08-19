@@ -50,10 +50,29 @@ must adhere to these foundations for maintainability, readability, and testabili
 These rules are non-negotiable. They apply to every line of test code
 generated, reviewed, or modified in a Certance Lens project.
 
-> **Machine-enforced.** `npm run lint` (ESLint flat config + `eslint-plugin-playwright`)
-> gates these in CI and pre-commit — no more `waitForTimeout`, no `.locator()` (CSS/XPath),
-> no unawaited Playwright calls, no focused tests. Run `npm run lint:fix` to autofix,
-> `npm run format` for Prettier. This stops AI-generator drift from landing.
+> **How each rule is enforced.** `npm run lint` runs with `--max-warnings=0`, so a warning
+> fails the build the same as an error. Not every rule below is machine-checkable, so the
+> table says exactly which are — a rule enforced only by review is still a rule, but calling
+> it automated would be a lie an adopter can check in two minutes.
+>
+> | Rule                              | Enforced by                                                                       |
+> | --------------------------------- | --------------------------------------------------------------------------------- |
+> | 1 · Locator hierarchy             | **lint** — `.locator()`, `page.$`/`$$`, and text locators in specs are errors     |
+> | 2 · Page Object Model             | **lint** — direct `page.click/fill/press/...` in a spec or step is an error       |
+> | 3 · Fixtures over beforeEach      | review                                                                            |
+> | 4 · Test independence             | review                                                                            |
+> | 5 · Web-first assertions          | **lint** — `waitForTimeout`, missing `await`, and assertion-free tests are errors |
+> | 6 · Mock external dependencies    | review                                                                            |
+> | 7 · No real PII                   | review                                                                            |
+> | 8 · One scenario per test         | review                                                                            |
+> | 9 · Trace on for new tests        | **config** — `trace: 'retain-on-failure'` in `playwright.config.ts`               |
+> | 10 · Healer owns locator fixes    | process                                                                           |
+> | 11 · Fixtures inject Page Objects | review                                                                            |
+> | 12 · Application-agnostic core    | **lint** — `utils/` importing `pages/` or `features/` is an error                 |
+>
+> The lint rules are themselves tested (`unit/golden-rules.unit.test.ts`): each one is run
+> against code that should break it, so a rule that stops firing fails the build.
+> `npm run lint:fix` autofixes what it can; `npm run format` runs Prettier.
 
 1. **Locators** — always use `getByRole()`, `getByLabel()`, or
    `getByTestId()`. Never use CSS selectors, XPath, or class-based

@@ -34,7 +34,9 @@ replace `pages/` and `features/` with your own (the framework core doesn't chang
 ## The opinionated rules — and why
 
 The value here isn't a Playwright wrapper; it's a set of conventions that keep a suite fast,
-readable and trustworthy as it grows. They're enforced in review and, where possible, by ESLint.
+readable and trustworthy as it grows. Five of the twelve are enforced by ESLint at
+`--max-warnings=0` (the lint rules are themselves unit-tested, so one that stops firing fails
+the build); the rest are review conventions. [`skills/SKILL.md`](./skills/SKILL.md) says which is which.
 
 | Rule                                                                                           | Why it matters                                                                                                                           |
 | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
