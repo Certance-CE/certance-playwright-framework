@@ -16,10 +16,22 @@ const bddOutputDir = defineBddConfig({
 // shards; raise PW_WORKERS per shard as the app under test allows.
 const reportFormat: 'html' | 'blob' = process.env.PW_BLOB ? 'blob' : 'html';
 
-// The reference example runs against the public TodoMVC demo, so `npm test` is green
-// on a fresh clone with no credentials. BASE_URL is the app *origin*; Page Objects
-// navigate to their own paths (TodoPage → /todomvc/). Point BASE_URL at your own app.
-const baseURL = process.env.BASE_URL || 'https://demo.playwright.dev';
+// Two reference applications, deliberately.
+//
+// APP is the showcase: a real application with a login, an API and a DOM nobody wrote
+// for testing. It is what moves capabilities from "proven against a stub" to "proven
+// against a running app". Point BASE_URL at your own application to adopt the framework.
+//
+// TODOMVC is the portability lane: no login, no API, nothing to provision. It proves the
+// framework is not welded to one application, and it keeps a fast signal available when
+// the showcase app is unreachable.
+const APP = process.env.BASE_URL || 'https://practicesoftwaretesting.com';
+const TODOMVC = 'https://demo.playwright.dev';
+const AUTH_FILE = 'test-data/.auth/toolshop.json';
+
+// The reference app's API. The `api` fixture deliberately hard-codes nothing, so the
+// demo's endpoint is supplied here and stays overridable for your own application.
+process.env.APP_API_URL ||= process.env.BASE_URL ? undefined! : 'https://api.practicesoftwaretesting.com';
 
 export default defineConfig({
   testDir: './tests',
@@ -48,7 +60,7 @@ export default defineConfig({
         environmentInfo: {
           framework: 'Certance Lens',
           node_version: process.version,
-          base_url: baseURL,
+          base_url: APP,
         },
       },
     ],
@@ -56,7 +68,7 @@ export default defineConfig({
     ['playwright-ctrf-json-reporter', { outputFile: 'ctrf-report.json', outputDir: 'ctrf' }],
   ],
   use: {
-    baseURL,
+    baseURL: APP,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
@@ -64,18 +76,43 @@ export default defineConfig({
     actionTimeout: 30_000,
   },
   projects: [
-    // BDD (Gherkin) project — runs the .feature files via playwright-bdd.
-    //
-    // For an app that needs a login, capture auth once and add
-    // `storageState: 'test-data/.auth/user.json'` here so every scenario starts
-    // authenticated (see skills/core/auth.md). The TodoMVC reference example needs
-    // no login, so none is wired by default.
+    // Provisions an isolated account and saves the signed-in state. Everything that
+    // needs a session depends on this, so no scenario ever signs in through the UI.
+    {
+      name: 'setup',
+      testDir: './tests',
+      testMatch: /auth\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: APP, testIdAttribute: 'data-test' },
+    },
+    // The showcase suite — signed in, against the real application.
+    {
+      name: 'bdd:toolshop',
+      testDir: bddOutputDir,
+      grep: /@toolshop/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: APP,
+        storageState: AUTH_FILE,
+        // The showcase app ships `data-test`; TodoMVC ships Playwright's default
+        // `data-testid`. The attribute is a property of the application under test,
+        // which is why it is set per project and not globally.
+        testIdAttribute: 'data-test',
+      },
+    },
+    // The portability lane — no auth, no provisioning, different application.
     {
       name: 'bdd:chromium',
       testDir: bddOutputDir,
-      use: { ...devices['Desktop Chrome'] },
+      grepInvert: /@toolshop/,
+      use: { ...devices['Desktop Chrome'], baseURL: TODOMVC },
     },
-    // Direct spec project — non-BDD spec files under tests/.
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // Framework self-tests: hermetic, no application involved.
+    {
+      name: 'chromium',
+      testDir: './tests',
+      testIgnore: /auth\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: TODOMVC },
+    },
   ],
 });

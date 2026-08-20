@@ -45,7 +45,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:examples": "playwright test tests/foundation.spec.ts tests/cleanup.spec.ts tests/contract.spec.ts tests/network.spec.ts --project=chromium",
-    "test:seed": "playwright test tests/seed.spec.ts --project=chromium",
     "test:unit": "vitest run --coverage",
     "test:mutation": "stryker run",
     "bdd:gen": "bddgen",

@@ -87,8 +87,14 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Generate BDD specs
         run: npm run bdd:gen
-      - name: Run BDD suite
+      # The portability lane: a second application, no auth, fast.
+      - name: Run BDD suite (TodoMVC)
         run: npx playwright test --project=bdd:chromium
+
+      # The showcase: a real application with a login and an API. The setup project
+      # provisions an isolated account and runs first via `dependencies`.
+      - name: Run BDD showcase (Toolshop)
+        run: npx playwright test --project=bdd:toolshop
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v7
