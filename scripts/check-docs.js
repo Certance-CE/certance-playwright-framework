@@ -50,6 +50,27 @@ const EXPECTED_ABSENT = new Set([
   'test-data/.auth/user.json', // produced by the auth seed
 ]);
 
+/**
+ * Output directories. Documentation legitimately tells you where a report lands, but
+ * those paths only exist after a run — so on a clean checkout they are absent, and on
+ * a developer machine they are present. Checking them makes this script pass locally
+ * and fail in CI, which is precisely the class of drift it exists to prevent.
+ */
+const GENERATED_DIRS = [
+  'test-results/',
+  'reports/',
+  'allure-results/',
+  'allure-report/',
+  'playwright-report/',
+  'blob-report/',
+  'coverage/',
+  'ctrf/',
+  'perf-results/',
+  '.features-gen/',
+];
+
+const isGenerated = (p) => GENERATED_DIRS.some((d) => p.startsWith(d));
+
 const isIllustrative = (p) => ILLUSTRATIVE.some((i) => (i.endsWith('/') ? p.startsWith(i) : p === i));
 
 /**
@@ -104,7 +125,7 @@ for (const file of markdownFiles()) {
     if (/^(https?:|mailto:|#)/.test(clean)) continue;
     if (clean.includes('<') || clean.includes('*')) continue; // placeholders and globs
     const normalised = clean.replace(/^\.\//, '');
-    if (EXPECTED_ABSENT.has(normalised) || isIllustrative(normalised)) continue;
+    if (EXPECTED_ABSENT.has(normalised) || isIllustrative(normalised) || isGenerated(normalised)) continue;
 
     // Resolve relative to the document, then fall back to the repo root, since docs
     // reference both ways.
