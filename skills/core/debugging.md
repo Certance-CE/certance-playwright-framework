@@ -46,7 +46,7 @@ at every action step.
 | `strict mode: locator resolved to N elements` | Ambiguous locator               | Scope to a container; use `first()` only with a comment explaining why       |
 | `Element is outside of the viewport`          | Scroll needed                   | Use `locator.scrollIntoViewIfNeeded()` before action                         |
 | `Navigation failed`                           | Redirect loop or 404            | Check `BASE_URL` env var; verify staging environment is up                   |
-| `storageState not found`                      | Seed not run                    | Run `npm run test:seed`                                                      |
+| `storageState not found`                      | Seed not run                    | Re-run the setup project (`npx playwright test --project=setup`)             |
 | Passes locally, fails in CI                   | Headless / resource differences | Increase `actionTimeout`; remove any `waitForTimeout` calls                  |
 
 ---

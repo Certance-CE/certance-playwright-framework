@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 /**
  * Test data factory — generates synthetic data for tests.
  *
@@ -15,8 +17,13 @@ class FakeFactory {
   private counter = 0;
 
   constructor() {
-    // ISO date suffix makes names unique per day; counter handles same-run collisions
-    this.prefix = `E2E · ${new Date().toISOString().slice(0, 10)}`;
+    // The date makes values readable and sortable; the counter separates values within
+    // one process. Neither is enough on its own: Playwright runs each worker in its own
+    // process, so every worker would otherwise start at counter 1 on the same date and
+    // hand out identical values. A short per-instance token makes them unique across
+    // workers, which matters the moment an application enforces uniqueness server-side.
+    const token = crypto.randomBytes(3).toString('hex');
+    this.prefix = `E2E · ${new Date().toISOString().slice(0, 10)} · ${token}`;
   }
 
   private next(): string {

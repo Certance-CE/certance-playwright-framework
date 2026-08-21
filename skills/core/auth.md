@@ -12,47 +12,48 @@ Certance eliminates this by capturing auth state once and reusing it for every
 test in the suite.
 
 ```
-seed.spec.ts  ──►  test-data/.auth/user.json  ──►  all BDD projects
-                                                    (via storageState)
+auth.setup.ts  ──►  test-data/.auth/user.json  ──►  every dependent project
+  (setup project)                                     (via storageState)
 ```
 
 ---
 
-## 1. Seed script (`tests/seed.spec.ts`)
+## 1. Setup project (`tests/auth.setup.ts`)
 
-The seed spec fills the login form **once** and saves the resulting cookies and
-localStorage to a JSON file. It runs before the test suite and is not a real
-test — it's infrastructure.
+Authentication runs once, in its own project, before anything that needs a session. Other
+projects declare `dependencies: ['setup']`, so no scenario signs in through the UI.
 
 ```typescript
-import { test, expect } from '@playwright/test';
-import path from 'path';
+import { test as setup, request } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
 
-const AUTH_FILE = path.join(__dirname, '../test-data/.auth/user.json');
+const AUTH_FILE = 'test-data/.auth/user.json';
 
-test('seed: authenticate and save storage state', async ({ page }) => {
-  await page.goto(process.env.BASE_URL!);
-  await page.waitForLoadState('domcontentloaded');
+setup('authenticate', async ({ page }) => {
+  // Provision an isolated account over the API, then sign in through the real UI so
+  // that path is genuinely exercised rather than assumed.
+  const api = await request.newContext({ baseURL: process.env.APP_API_URL });
+  const account = await registerAccount(api);
+  await api.dispose();
 
-  // ── Fill login form ──────────────────────────────────────────────────────
-  await page.getByRole('textbox', { name: 'Email' }).fill(process.env.TEST_USER_EMAIL!);
-  await page.getByRole('textbox', { name: 'Password' }).fill(process.env.TEST_USER_PASSWORD!);
-  await page.getByRole('button', { name: 'Log In' }).click();
-
-  // ── Confirm successful login before saving state ─────────────────────────
-  // UPDATE THIS ASSERTION for each app under test — it must match a reliable
-  // post-login element in the app.
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 60_000 });
+  const loginPage = new LoginPage(page);
+  await loginPage.login(account.username, account.password);
+  await loginPage.expectSignedIn();
 
   await page.context().storageState({ path: AUTH_FILE });
 });
 ```
 
-**Update checklist for each new app:**
+**One account per run, not one per scenario.** Provisioning is a write, and many applications
+serialise writes — the reference app stores data in SQLite, where six parallel registrations
+produced five `database is locked` failures. Create the account once in setup and share it.
 
-- [ ] Login form locators (email, password, submit button)
-- [ ] Post-login assertion (`getByRole('heading', { name: '...' })` or equivalent)
-- [ ] `BASE_URL` environment variable
+**Watch the API base URL.** Playwright joins request paths as URLs, so a leading slash replaces
+any path on the `baseURL`: `/register` against `https://host/api/v1` silently becomes
+`https://host/register`. A single-page application serves its shell for unknown routes, so that
+returns **200 with HTML** and no account is created — surfacing much later as "wrong password".
+Set the API base URL to the origin, pass full paths, and assert the response shape, not just
+`response.ok()`.
 
 ---
 
@@ -119,17 +120,18 @@ Authentication feature tests (a `features/auth.feature` of your own) test the
 login UI itself. They must clear the saved auth state before running:
 
 ```typescript
-// features/step-definitions/authentication.steps.ts
-Given('I am on the login page', async ({ page }) => {
+Given('I am signed out', async ({ page }) => {
+  // You must be on the origin before localStorage is reachable.
+  await page.goto('/');
+  await page.evaluate(() => (globalThis as unknown as { localStorage: Storage }).localStorage.clear());
   await page.context().clearCookies();
-  await page.goto(process.env.BASE_URL + 'login');
-  await page.evaluate(() => localStorage.clear()).catch(() => {});
-  await expect(page.getByRole('heading', { name: 'Welcome back!' })).toBeVisible();
 });
 ```
 
-This pattern ensures the auth test exercises the real login UI, even though
-the BDD project injects `storageState` at startup.
+**Clearing cookies is not signing out.** Most single-page applications keep their token in
+`localStorage`, not a cookie — the reference app does. Clear only cookies and the user stays
+signed in, the login form never renders, and the failure looks like a broken locator rather
+than a session that refused to end. Clear both.
 
 ---
 
@@ -140,9 +142,11 @@ Storage state files expire when session cookies expire. Signs of expiry:
 - Tests that navigate to the app land on the login page instead of the app
 - `assertWorkspaceLoaded()` times out
 
-**Fix:** Re-run the seed: `npm run test:seed`
+**Fix:** re-run the setup project (`npx playwright test --project=setup`), or just re-run the
+suite — setup is a declared dependency and refreshes the state automatically.
 
-In CI, run the seed job before every test job (see `.github/workflows/playwright.yml`).
+Because setup is declared as a dependency of the projects that need it, CI needs no separate
+seed job — Playwright orders it.
 
 ---
 

@@ -18,7 +18,16 @@
  */
 import { test as composedTest } from './perf.fixture';
 
-export const test = composedTest;
+export const test = composedTest.extend<{ scenario: Map<string, unknown> }>({
+  /**
+   * Per-scenario scratch space for passing state between steps — a value created in a
+   * Given and asserted in a Then. A generic mechanism with no application knowledge, so
+   * the core stays app-agnostic (golden rule #12).
+   */
+  scenario: async ({}, use) => {
+    await use(new Map<string, unknown>());
+  },
+});
 export const { expect } = test;
 
 // Re-export fixture types + helpers so specs/steps can import them from one place.

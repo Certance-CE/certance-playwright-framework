@@ -18,13 +18,23 @@ clone — then you point `BASE_URL` at your own app and swap in your own Page Ob
 git clone https://github.com/Certance-CE/certance-playwright-framework.git
 cd certance-playwright-framework
 npm install
-npx playwright install chromium
+npm run setup
 npm test
 ```
 
-That runs the BDD suite against the TodoMVC demo — no account, no secrets. Skip the browser
-step and the suite tells you exactly what to run rather than failing a dozen scenarios; `npm run
-setup` does the same thing if you prefer. Node 22 or newer (`.nvmrc` pins the version `nvm` picks).
+`npm run setup` fetches a browser and a demo application; `npm test` then runs against **two**
+applications and needs no credentials from you:
+
+- **A self-hosted app** — the showcase. Playwright starts it, provisions an account over its API,
+  signs in through the real UI, runs the suite and stops it. It is a real third-party application
+  (open source, unmodified), so the DOM was not written for these tests — but it runs locally, so
+  the suite works offline, behind a corporate proxy, and cannot be blocked by a hosted demo
+  deciding your CI looks like a bot.
+- **TodoMVC** — the portability lane. No login, no download; it proves the framework is not welded
+  to one application.
+
+Skip the setup step and the suite tells you exactly what to run rather than failing a dozen
+scenarios. Node 22 or newer (`.nvmrc` pins what `nvm` picks).
 
 To test **your** app, copy `.env.example` to `.env`, set `BASE_URL` to your app's origin, and
 replace `pages/` and `features/` with your own (the framework core doesn't change).
@@ -82,7 +92,8 @@ The core is application-agnostic by design (see
 4. If your app needs a login, capture a `storageState` once and wire it into the bdd project in
    `playwright.config.ts` — see [`skills/core/auth.md`](./skills/core/auth.md).
 
-The TodoMVC `TodoPage` + `features/todos.feature` are the reference example to model yours on.
+`features/auth.feature` with `LoginPage` and `tests/auth.setup.ts` is the example to model an
+authenticated app on; `TodoPage` + `features/todos.feature` is the minimal one.
 
 ---
 
