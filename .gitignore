@@ -38,3 +38,6 @@ stryker.log
 
 # Coverage (generated)
 /coverage/
+
+# Demo application binary (fetched by npm run setup)
+/.bin/

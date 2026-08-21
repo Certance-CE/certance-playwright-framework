@@ -72,9 +72,10 @@ jobs:
           path: reports/mutation/
           retention-days: 14
 
-  # BDD suite against the public TodoMVC demo — runs on a cold clone with no secrets.
+  # BDD suites — no secrets. The showcase runs against a real application the job starts
+  # itself; the portability lane runs against a second, public one.
   bdd:
-    name: BDD (TodoMVC demo)
+    name: BDD (self-hosted app + TodoMVC)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -85,9 +86,21 @@ jobs:
       - run: npm ci
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
+      - name: Fetch the demo application
+        run: node scripts/fetch-app.js
+
       - name: Generate BDD specs
         run: npm run bdd:gen
-      - name: Run BDD suite
+
+      # The showcase: Playwright starts the application, provisions an account, signs in
+      # and runs the suite, then stops it. No hosted dependency, so no third party can
+      # decide this build looks like a bot.
+      - name: Run BDD showcase (self-hosted app)
+        run: npx playwright test --project=setup --project=bdd:app
+
+      # The portability lane: a different application, proving the framework is not
+      # welded to one target.
+      - name: Run BDD suite (TodoMVC)
         run: npx playwright test --project=bdd:chromium
       - name: Upload Playwright report
         if: always()

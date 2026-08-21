@@ -137,10 +137,11 @@ export default tseslint.config(
     },
   },
 
-  // Framework self-tests + the auth-seed bootstrap deliberately do odd things
-  // (throw-in-disposer, test.fail(), or asserting via a Page Object method).
+  // Framework self-tests and the auth bootstrap deliberately do odd things
+  // (throw-in-disposer, test.fail(), or asserting through a Page Object method,
+  // which the expect-expect rule cannot see).
   {
-    files: ['tests/cleanup.spec.ts', 'tests/contract.spec.ts', 'tests/foundation.spec.ts', 'tests/seed.spec.ts'],
+    files: ['tests/cleanup.spec.ts', 'tests/contract.spec.ts', 'tests/foundation.spec.ts', 'tests/auth.setup.ts'],
     rules: { 'playwright/expect-expect': 'off' },
   },
 

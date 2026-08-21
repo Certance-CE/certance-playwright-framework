@@ -1,6 +1,7 @@
 import { test as base } from 'playwright-bdd';
 import { BasePage } from '../pages/BasePage';
 import { TodoPage } from '../pages/TodoPage';
+import { LoginPage } from '../pages/LoginPage';
 
 /**
  * Page Object fixtures — one entry per Page Object class.
@@ -15,6 +16,7 @@ import { TodoPage } from '../pages/TodoPage';
 export type PageFixtures = {
   basePage: BasePage;
   todoPage: TodoPage;
+  loginPage: LoginPage;
 };
 
 export const test = base.extend<PageFixtures>({
@@ -23,5 +25,8 @@ export const test = base.extend<PageFixtures>({
   },
   todoPage: async ({ page }, use) => {
     await use(new TodoPage(page));
+  },
+  loginPage: async ({ page }, use) => {
+    await use(new LoginPage(page));
   },
 });

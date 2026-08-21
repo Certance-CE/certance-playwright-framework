@@ -2,23 +2,35 @@ import { expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
- * LoginPage — TEMPLATE Page Object for the auth-seed flow (tests/seed.spec.ts).
+ * LoginPage — sign-in for the demo application.
  *
- * The TodoMVC reference example needs no login, so this is a starting point:
- * adapt the locators to your own app's login form (role/label first, golden
- * rule #1). Keeping the interactions here — not in the spec — is the point: even
- * the auth seed obeys "all UI interaction lives in a Page Object".
+ * Every locator here is role- or label-based. That is not luck: it is the reason this
+ * application was chosen as the reference. An app whose controls have no accessible
+ * names forces CSS selectors, and a framework whose headline is its locator discipline
+ * should not ship a demo that breaks it.
  */
 export class LoginPage extends BasePage {
-  async login(email: string, password: string) {
-    await this.goto('/');
-    await this.page.getByLabel('Email').fill(email);
-    await this.page.getByLabel('Password').fill(password);
-    await this.page.getByRole('button', { name: 'Sign in' }).click();
+  async open() {
+    await this.goto('/login');
   }
 
-  async expectLoggedIn() {
-    // Assert a reliable post-login element for your app before saving state.
-    await expect(this.page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 30_000 });
+  async login(username: string, password: string) {
+    await this.open();
+    await this.page.getByLabel('Username').fill(username);
+    await this.page.getByLabel('Password', { exact: true }).fill(password);
+    await this.page.getByRole('button', { name: /log ?in/i }).click();
+  }
+
+  /**
+   * The landing page greets the user by name and time of day, so the greeting is a poor
+   * assertion. The task list beside it is stable.
+   */
+  async expectSignedIn() {
+    await expect(this.page.getByRole('heading', { name: 'Current Tasks' })).toBeVisible({ timeout: 30_000 });
+  }
+
+  async expectStillOnSignIn() {
+    await expect(this.page.getByRole('button', { name: /log ?in/i })).toBeVisible({ timeout: 20_000 });
+    await expect(this.page.getByRole('heading', { name: 'Current Tasks' })).toHaveCount(0);
   }
 }
