@@ -23,7 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Review dependency changes
-        continue-on-error: true # needs Dependency Graph / GHAS on private repos; best-effort
         uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
@@ -47,5 +46,4 @@ jobs:
       - name: Autobuild
         uses: github/codeql-action/autobuild@v4
       - name: Analyze
-        continue-on-error: true # SARIF upload needs Code Scanning / GHAS on private repos; best-effort
         uses: github/codeql-action/analyze@v4
