@@ -23,13 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Review dependency changes
-        # Dependency graph is OFF for this repository, so the action exits 1 with
-        # "Dependency review is not supported on this repository" regardless of what a
-        # PR changes — a repo flipped from private to public does not get it switched
-        # on automatically, and there is no API to enable it. Turn it on under
-        # Settings > Code security > Dependency graph, then DELETE this line: the gate
-        # below is what blocks a PR that introduces a high-severity advisory.
-        continue-on-error: true
         uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
