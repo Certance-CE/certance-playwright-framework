@@ -7,19 +7,19 @@ Feature: Todo list
   Background:
     Given I open the todo app
 
-  @smoke
+  @smoke @req:REQ-TODO-001
   Scenario: Add a todo
     When I add the todo "Buy milk"
     Then the todo "Buy milk" should be visible
     And there should be 1 todo
 
-  @smoke
+  @smoke @req:REQ-TODO-002
   Scenario: Complete a todo
     Given I have added the todo "Write tests"
     When I complete the todo "Write tests"
     Then the todo "Write tests" should be completed
 
-  @regression
+  @regression @req:REQ-TODO-003
   Scenario: Filter active and completed todos
     Given I have added the todo "Active task"
     And I have added the todo "Done task"
@@ -31,7 +31,7 @@ Feature: Todo list
     Then the todo "Done task" should be visible
     And the todo "Active task" should not be visible
 
-  @regression
+  @regression @req:REQ-TODO-004
   Scenario: Clear completed todos
     Given I have added the todo "Keep me"
     And I have added the todo "Remove me"

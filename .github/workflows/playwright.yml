@@ -102,6 +102,21 @@ jobs:
       # welded to one target.
       - name: Run BDD suite (TodoMVC)
         run: npx playwright test --project=bdd:chromium
+      # Render the run as GitHub job summaries. Both scripts are dependency-free and
+      # never fail the build: a reporting layer must not be able to turn a green
+      # suite red. Without these steps the CTRF reporter and the requirement
+      # catalogue produce files that nothing ever reads.
+      - name: Test summary
+        if: always()
+        run: npm run ctrf:summary
+
+      # Traceability: requirements/*.md x @req: tags x this run's results.
+      # Gaps are reported, not enforced — set REQ_FAIL_ON_GAP=1 to make an
+      # uncovered critical/high requirement fail the job.
+      - name: Requirement traceability
+        if: always()
+        run: npm run coverage:requirements
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v7
@@ -109,3 +124,11 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+      - name: Upload traceability matrix
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: requirements-coverage
+          path: requirements-coverage.md
+          retention-days: 14
