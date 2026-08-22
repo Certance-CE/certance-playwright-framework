@@ -12,12 +12,12 @@ import { epic, feature, severity, label } from 'allure-js-commons';
  * Extend the maps when you add a feature area, or tag a scenario `@journey:<name>`
  * to group it under a user journey for coverage reporting.
  */
+// One entry per feature-area tag your .feature files carry. A tag with no entry
+// here produces a scenario with NO epic/feature label, which silently drops it
+// out of Allure's Behaviors tree — so extend this map whenever you add an area.
 const EPIC_BY_TAG: Record<string, string> = {
   authentication: 'Authentication',
-  search: 'Search',
-  'task-creation': 'Task Management',
-  'task-management': 'Task Management',
-  'list-views': 'List Views',
+  todos: 'Todo list',
 };
 
 const SEVERITY_BY_TAG: Record<string, string> = {

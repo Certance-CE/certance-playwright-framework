@@ -42,17 +42,46 @@ export default defineConfig({
 
 ## Tag taxonomy — required on every test
 
-Every test must have three Allure tags before it can be counted in a
-coverage report. Missing tags mean missing coverage visibility.
+Every test needs an epic, a feature and a severity before it can be counted in a
+coverage report. A test without them still runs and still passes — it simply
+vanishes from Allure's Behaviors tree, which is the failure mode this taxonomy
+exists to prevent.
+
+**In this framework you do not write those three calls.** `fixtures/allure.fixture.ts`
+is an auto-fixture that derives them from the Gherkin tags a scenario already
+carries, so the taxonomy cannot drift from the tags:
+
+```gherkin
+@todos                    # -> epic: Todo list, feature: Todo list  (via EPIC_BY_TAG)
+Feature: Todo list
+
+  @smoke                  # -> severity: critical                   (via SEVERITY_BY_TAG)
+  @req:REQ-TODO-001       # -> label requirement: REQ-TODO-001
+  Scenario: Add a todo
+```
+
+The one thing you must maintain is the map. A feature-area tag with **no entry**
+in `EPIC_BY_TAG` produces a scenario with no epic and no feature label — it runs,
+it passes, and it is invisible in the report. Add an entry whenever you add an area:
 
 ```typescript
-import { test, expect } from '@playwright/test';
-import { allure } from 'allure-playwright';
+// fixtures/allure.fixture.ts
+const EPIC_BY_TAG: Record<string, string> = {
+  authentication: 'Authentication',
+  todos: 'Todo list',
+};
+```
+
+For a non-BDD spec, or to override the mapping for one test, call the
+`allure-js-commons` helpers directly:
+
+```typescript
+import { epic, feature, severity } from 'allure-js-commons';
 
 test('user can complete checkout with card payment', async ({ page }) => {
-  allure.epic('Commerce');
-  allure.feature('Checkout');
-  allure.severity('critical');
+  await epic('Commerce');
+  await feature('Checkout');
+  await severity('critical');
 
   // test body
 });
@@ -242,22 +271,23 @@ of automation work to achieve full critical path coverage.
 
 **Do not do this:**
 
-```typescript
-// Missing tags — this test is invisible in coverage reporting
-test('checkout works', async ({ page }) => {
-  // test body
-});
+```gherkin
+# The tag carries no EPIC_BY_TAG entry, so this scenario has no epic and no
+# feature label. It passes, and it is invisible in the Behaviors tree.
+@checkout
+Feature: Checkout
 ```
 
-**Do this:**
+**Do this** — add the area to the map once, and every scenario tagged with it
+inherits the taxonomy:
 
 ```typescript
-test('user can complete checkout with saved card', async ({ page }) => {
-  allure.epic('Commerce');
-  allure.feature('Checkout');
-  allure.severity('critical');
-  // test body
-});
+// fixtures/allure.fixture.ts
+const EPIC_BY_TAG: Record<string, string> = {
+  authentication: 'Authentication',
+  todos: 'Todo list',
+  checkout: 'Commerce',
+};
 ```
 
 ---
@@ -266,4 +296,4 @@ test('user can complete checkout with saved card', async ({ page }) => {
 
 Guide version: 1.0.0
 Reporter: allure-playwright ^3.x
-Last reviewed: April 2026
+Last reviewed: August 2026
