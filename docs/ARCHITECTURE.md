@@ -304,11 +304,11 @@ The following are wired and proven in the reference example, not aspirational:
 | API request context  | `fixtures/api.fixture.ts` (the `api` fixture) + `skills/core/api.md`                                           |
 | Visual regression    | Playwright `toHaveScreenshot` defaults in `playwright.config.ts` + `utils/visual.ts` + `skills/core/visual.md` |
 | Accessibility checks | `fixtures/a11y.fixture.ts` via `@axe-core/playwright`, surfaced under an Allure "Accessibility" epic           |
-| Test-data cleanup    | `fixtures/cleanup.fixture.ts` — LIFO disposers that run even on failure, proven by `tests/cleanup.spec.ts`     |
-| Contract validation  | `utils/contract.ts` (Zod) + `tests/contract.spec.ts`                                                           |
+| Test-data cleanup    | `fixtures/cleanup.fixture.ts` — LIFO disposers that run even on failure, proven by `framework-tests/cleanup.spec.ts`     |
+| Contract validation  | `utils/contract.ts` (Zod) + `framework-tests/contract.spec.ts`                                                           |
 | Performance metrics  | `fixtures/perf.fixture.ts` + `utils/performance.ts` (`web-vitals`)                                             |
 
 > **Adoption note.** The cleanup _mechanism_ ships and is proven by
-> `tests/cleanup.spec.ts`. The TodoMVC reference example creates no server-side
+> `framework-tests/cleanup.spec.ts`. The TodoMVC reference example creates no server-side
 > data, so it registers no disposers — wire them in for your own app when a test
 > persists records that should not accumulate.

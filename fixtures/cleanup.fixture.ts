@@ -17,7 +17,7 @@ import { test as apiTest } from './api.fixture';
  * The disposer is just an async function, so teardown is **transport-agnostic** —
  * delete via the `api` fixture, or drive a Page Object, whichever the app supports.
  *
- * Contract (enforced by tests/cleanup.spec.ts):
+ * Contract (enforced by framework-tests/cleanup.spec.ts):
  *  1. **LIFO order** — disposers run in reverse registration order, so a child
  *     created after its parent is removed first.
  *  2. **Always runs** — teardown happens even when the test fails, so a failing

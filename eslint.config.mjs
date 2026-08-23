@@ -53,12 +53,27 @@ export default tseslint.config(
   // Playwright rules on all test + framework code.
   {
     ...playwright.configs['flat/recommended'],
-    files: ['tests/**/*.ts', 'specs/**/*.ts', 'features/**/*.ts', 'fixtures/**/*.ts', 'pages/**/*.ts', 'utils/**/*.ts'],
+    files: [
+      'tests/**/*.ts',
+      'framework-tests/**/*.ts',
+      'specs/**/*.ts',
+      'features/**/*.ts',
+      'fixtures/**/*.ts',
+      'pages/**/*.ts',
+      'utils/**/*.ts',
+    ],
   },
 
   // Reinforce the golden rules beyond the plugin's defaults.
   {
-    files: ['tests/**/*.ts', 'specs/**/*.ts', 'features/**/*.ts', 'fixtures/**/*.ts', 'pages/**/*.ts'],
+    files: [
+      'tests/**/*.ts',
+      'framework-tests/**/*.ts',
+      'specs/**/*.ts',
+      'features/**/*.ts',
+      'fixtures/**/*.ts',
+      'pages/**/*.ts',
+    ],
     rules: {
       'playwright/no-wait-for-timeout': 'error',
       'playwright/prefer-web-first-assertions': 'error',
@@ -90,7 +105,7 @@ export default tseslint.config(
   // fixtures/ needs them to build reusable behaviour. A spec or step definition
   // driving the page directly is the thing this rule exists to stop.
   {
-    files: ['tests/**/*.ts', 'specs/**/*.ts', 'features/**/*.ts'],
+    files: ['tests/**/*.ts', 'framework-tests/**/*.ts', 'specs/**/*.ts', 'features/**/*.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -141,7 +156,12 @@ export default tseslint.config(
   // (throw-in-disposer, test.fail(), or asserting through a Page Object method,
   // which the expect-expect rule cannot see).
   {
-    files: ['tests/cleanup.spec.ts', 'tests/contract.spec.ts', 'tests/foundation.spec.ts', 'tests/auth.setup.ts'],
+    files: [
+      'framework-tests/cleanup.spec.ts',
+      'framework-tests/contract.spec.ts',
+      'framework-tests/foundation.spec.ts',
+      'tests/auth.setup.ts',
+    ],
     rules: { 'playwright/expect-expect': 'off' },
   },
 

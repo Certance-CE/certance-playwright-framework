@@ -1,0 +1,12 @@
+{
+  // .features-gen/ holds the specs playwright-bdd generates from features/*.feature.
+  // It is deliberately NOT hidden: the Testing panel lists those generated files, not
+  // the Gherkin, so hiding the folder makes two thirds of the suite look missing.
+  // It is marked read-only instead, because editing it is always a mistake — the next
+  // `npm run bdd:gen` overwrites whatever you wrote.
+  "files.readonlyInclude": { ".features-gen/**": true },
+  "search.exclude": { ".features-gen/**": true, "test-results/**": true, "allure-results/**": true },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "eslint.validate": ["typescript", "javascript"]
+}

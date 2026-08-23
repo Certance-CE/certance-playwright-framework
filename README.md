@@ -81,6 +81,37 @@ decisions in [`docs/decisions/`](./docs/decisions).
 
 ---
 
+## Where the tests live
+
+Four lanes, deliberately separate. If you open `tests/` and wonder where the rest
+went, this is the map:
+
+| Lane                     | Lives in                                               | Runs against            | Browser |
+| ------------------------ | ------------------------------------------------------ | ----------------------- | ------- |
+| **API**                  | `tests/api/*.api.spec.ts`                              | the demo app's REST API | no      |
+| **App UI**               | `features/*.feature` → generated into `.features-gen/` | the demo app            | yes     |
+| **Portability**          | the same `features/`, `@todos` scenarios               | TodoMVC                 | yes     |
+| **Framework self-tests** | `framework-tests/`                                     | nothing — fully offline | yes     |
+
+`tests/` holds tests **of the application**. `framework-tests/` holds tests of this
+framework's own helpers, and needs no app, no network and no auth.
+
+**The UI tests are generated.** You edit Gherkin in `features/*.feature`; running
+`npm run bdd:gen` writes the runnable specs into `.features-gen/`. VS Code's Testing
+panel lists the _generated_ files, so run that first or two thirds of the suite looks
+missing. Every `test:*` and `bdd:*` script does it for you.
+
+```bash
+npm run test:api      # API lane — no browser, a few seconds
+npm run test:app      # the demo app, signed in and signed out
+npm run bdd:test      # TodoMVC — no download needed
+npm run test:examples # framework self-tests, fully offline
+npm run test:ui       # Playwright UI mode: time travel, watch, pick locator
+npm run test:headed   # watch a real browser drive it
+```
+
+---
+
 ## Retargeting to your app
 
 The core is application-agnostic by design (see
