@@ -34,7 +34,7 @@ test('shows the empty state when the list API returns nothing', async ({ page, m
 });
 ```
 
-See `tests/foundation.spec.ts` for a runnable offline example.
+See `framework-tests/foundation.spec.ts` for a runnable offline example.
 
 ### Fault injection — `degrade()` (prove graceful degradation)
 
@@ -56,7 +56,7 @@ await degrade('**/api/inventory', { delay: 2000, status: 429 }); // slow AND thr
 await degrade('**/api/inventory', { abort: 'connectionrefused' }); // hard failure
 ```
 
-Proven by `tests/network.spec.ts` (503 · latency · connection failure · selective targeting).
+Proven by `framework-tests/network.spec.ts` (503 · latency · connection failure · selective targeting).
 
 ---
 

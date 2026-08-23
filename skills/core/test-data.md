@@ -34,7 +34,7 @@ test('creates a task', async ({ taskListPage, data }) => {
 ```
 
 Set `FAKER_SEED` to make `data.realistic.*` reproducible in a run. See
-`tests/foundation.spec.ts` for a runnable offline example.
+`framework-tests/foundation.spec.ts` for a runnable offline example.
 
 ---
 
@@ -121,7 +121,7 @@ test('creates a task', async ({ taskListPage, data, cleanup, api }) => {
 });
 ```
 
-Guarantees (proven by `tests/cleanup.spec.ts`):
+Guarantees (proven by `framework-tests/cleanup.spec.ts`):
 
 | Rule                 | Behaviour                                                                                                            |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------- |

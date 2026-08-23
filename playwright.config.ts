@@ -181,13 +181,13 @@ export default defineConfig({
       workers: 1,
       use: { baseURL: APP },
     },
-    // Framework self-tests: hermetic, no application involved.
+    // Framework self-tests: hermetic, no application involved. They live in
+    // framework-tests/ rather than tests/ so the split is visible in the file tree:
+    // tests/ holds tests OF THE APPLICATION, framework-tests/ holds tests of this
+    // framework's own helpers. No testIgnore needed — the directory says it.
     {
       name: 'chromium',
-      testDir: './tests',
-      // The API lane needs a running application; these do not. Keeping it out means
-      // `--project=chromium` stays the lane you can run on a plane.
-      testIgnore: [/auth\.setup\.ts/, /tests[\\/]api[\\/]/],
+      testDir: './framework-tests',
       use: { ...devices['Desktop Chrome'], baseURL: TODOMVC },
     },
   ],

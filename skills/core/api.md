@@ -99,7 +99,7 @@ by exactly that (see `skills/core/auth.md`).
 
 ### Contract checks belong against the LIVE provider
 
-`tests/contract.spec.ts` proves the validators work, entirely offline, against objects
+`framework-tests/contract.spec.ts` proves the validators work, entirely offline, against objects
 written by hand in the same file. That proves the _code_. It cannot prove the
 _contract_: a schema and a stub written by the same person agree with each other by
 construction. `tests/api/contract.api.spec.ts` runs the same schemas against what the
@@ -154,7 +154,7 @@ test('the task endpoint holds its contract', async ({ api }) => {
 
 Schemas are plain Zod — hand-write them, or **generate from the provider's OpenAPI**
 (e.g. `openapi-zod-client`) so the contract tracks the spec. `validateSchema(body, schema)`
-is the pure variant for a value you already have. Proven by `tests/contract.spec.ts`.
+is the pure variant for a value you already have. Proven by `framework-tests/contract.spec.ts`.
 
 ## Running in CI
 

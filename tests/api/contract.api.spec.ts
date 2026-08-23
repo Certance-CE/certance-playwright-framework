@@ -5,7 +5,7 @@ import { expectSchema, validateSchema } from '../../utils/contract';
 /**
  * Contract checks against the LIVE application.
  *
- * `tests/contract.spec.ts` proves the validators work; it does so entirely offline,
+ * `framework-tests/contract.spec.ts` proves the validators work; it does so entirely offline,
  * against objects written by hand in the same file. That proves the code, not the
  * contract — a schema can only detect provider drift if it has been run against
  * what the provider actually sends. These tests do that.

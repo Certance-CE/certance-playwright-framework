@@ -21,7 +21,7 @@ test('dashboard meets WCAG 2.1 AA', async ({ page, checkA11y }) => {
 ```
 
 Options: `tags` (WCAG tag set), `include`/`exclude` (CSS region), `failOn`
-(set `false` to inspect without failing). See `tests/foundation.spec.ts` for a
+(set `false` to inspect without failing). See `framework-tests/foundation.spec.ts` for a
 runnable offline example.
 
 ---
