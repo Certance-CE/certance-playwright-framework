@@ -66,3 +66,52 @@ A signed-in user requesting a project belonging to a different account receives
 > claim than rejecting the *wrong* session, and authorization is the property that
 > matters to a regulated buyer. Covering it needs a second provisioned account,
 > which the setup project does not yet create.
+
+## REQ-API-007 — The project resource matches its published contract
+
+**Priority:** normal
+
+Creating and fetching a project both return an object carrying `id`, `title`,
+`description`, `is_archived`, `is_favorite`, `parent_project_id` and an `owner`
+with `id` and `username`, each of the declared type.
+
+- Covered by: `tests/api/contract.api.spec.ts` → _the project resource matches its contract_
+
+## REQ-API-008 — The task resource matches its published contract
+
+**Priority:** normal
+
+Creating, updating and listing tasks all return the declared shape, and the shape
+survives a state change rather than only holding at creation.
+
+- Covered by: `tests/api/contract.api.spec.ts` → _the task resource matches its contract, before and after completion_
+
+## REQ-API-009 — The label resource matches its published contract
+
+**Priority:** normal
+
+Creating a label returns `id`, `title` and the `hex_color` that was requested.
+
+- Covered by: `tests/api/contract.api.spec.ts` → _the label resource matches its contract_
+
+## REQ-API-010 — The public service descriptor matches its published contract
+
+**Priority:** normal
+
+The unauthenticated `/info` endpoint returns `version`, `link_sharing_enabled` and
+`max_file_size`. A client reads this before it has a session, so a change here
+breaks users who cannot yet sign in.
+
+- Covered by: `tests/api/contract.api.spec.ts` → _the public service descriptor matches its contract_
+
+---
+
+## Known provider inconsistency
+
+`POST /api/v1/tasks/{id}` returns `identifier: ""`, while create, fetch and list all
+return `"#1"` for the same task. `index` is correct throughout, so only the rendered
+form is lost. Found by the contract checks on their first live run against v2.5.0.
+
+It is a defect in the application under test, not in this suite, so it is pinned by a
+characterisation test rather than hidden by loosening every schema. If it is ever
+fixed, that test fails and tells us to tighten the shared `Task` schema.

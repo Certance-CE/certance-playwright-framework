@@ -97,6 +97,40 @@ by exactly that (see `skills/core/auth.md`).
 
 ---
 
+### Contract checks belong against the LIVE provider
+
+`tests/contract.spec.ts` proves the validators work, entirely offline, against objects
+written by hand in the same file. That proves the _code_. It cannot prove the
+_contract_: a schema and a stub written by the same person agree with each other by
+construction. `tests/api/contract.api.spec.ts` runs the same schemas against what the
+provider actually sends.
+
+The difference is not theoretical. On its first live run against the reference
+application, that suite found a real inconsistency: `POST /api/v1/tasks/{id}` returns
+`identifier: ""` while create, fetch and list all return `"#1"` for the same task.
+No offline stub would ever have contained that, because nobody would write it.
+
+**Assert only the fields you depend on.** The task resource carries around thirty;
+pinning all of them turns every harmless upstream addition into a failed build, and
+teams respond to that by deleting the check.
+
+**Do not use `.strict()` by default.** A provider ADDING a field is
+backwards-compatible and must not fail. Dropping one, or changing its type, is what
+breaks callers — and a non-strict schema still catches both.
+
+**When the provider is inconsistent, pin the inconsistency.** The tempting fix is to
+loosen the schema everywhere until it passes; that discards the finding. Hold the
+endpoints that honour the contract to it, and write a characterisation test recording
+what the odd one out does. If it is ever fixed, that test fails and tells you to
+tighten up:
+
+```typescript
+const Task = z.object({ /* … */ identifier: z.string() }); // update returns ""
+const IdentifiedTask = Task.extend({ identifier: z.string().startsWith('#') });
+```
+
+---
+
 ## Schema validation — catch provider drift (`utils/contract.ts`)
 
 `expectSchema(response, schema)` asserts a response is 2xx **and** that its JSON
