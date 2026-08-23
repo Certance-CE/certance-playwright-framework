@@ -1,40 +1,17 @@
 # Copilot workspace instructions
 
-This file applies automatically to every Copilot interaction in this repository.
-It sets non-negotiable standards for both test code and documentation.
+**Read [AGENTS.md](../AGENTS.md) in the repository root.** It is the single source of
+instruction for every AI agent working here, and this file exists only to point
+Copilot at it.
 
----
+Keeping a second copy of the rules is how they drift: the previous version of this
+file told agents to mock with `page.route()` and to import faker directly, both of
+which the lint rules now reject. One file, one truth.
 
-## Project identity
+The essentials, if you read nothing else:
 
-This is **Certance Lens** — a general, opinionated Playwright + BDD framework for
-AI-native test automation. The runnable reference example targets the public TodoMVC
-demo; the core is application-agnostic, so you point `BASE_URL` at your own app.
-
-Tech stack: Playwright · TypeScript · BDD (Cucumber) · GitHub Actions · Allure
-
----
-
-## Test code — golden rules (non-negotiable)
-
-- Locators: `getByRole()` > `getByLabel()` > `getByTestId()` — no CSS, no XPath
-- Assertions: web-first only — `expect(locator).toBeVisible()`, never `waitForTimeout()`
-- Auth: always use the auth fixture from `fixtures/` — never inline login in a spec
-- Page Objects: all UI interactions go in `pages/` — no raw `page.click()` in spec files
-- Test data: faker for synthetic data — never real PII in tests
-- Mocking: `page.route()` for all external APIs — no real third-party calls in tests
-- Read `skills/SKILL.md` before generating any test code
-- BDD: write Gherkin in `features/*.feature`, steps in `features/step-definitions/`
-- Run `npm run bdd:gen` before running BDD tests
-- Tags: `@smoke` and `@regression` run in CI; `@wip` is excluded
-- One test, one scenario — split compound tests
-
----
-
-## Agent selection guide
-
-| Task                          | Agent                       |
-| ----------------------------- | --------------------------- |
-| Write or fix Playwright tests | `playwright-test-generator` |
-| Heal broken locators          | `playwright-test-healer`    |
-| Plan a test suite             | `playwright-test-planner`   |
+- Locators: `getByRole()` → `getByLabel()` → `getByTestId()`. No CSS, no XPath.
+- Every UI interaction goes in a Page Object under `pages/`, injected via a fixture.
+- Web-first assertions only. No `waitForTimeout`, no `networkidle`, no `force: true`.
+- Mock through the `network` fixture; take test data from the `data` fixture.
+- `npm run lint` enforces nine of the twelve golden rules — run it before you commit.

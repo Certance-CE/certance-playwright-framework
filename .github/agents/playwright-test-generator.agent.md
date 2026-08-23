@@ -12,6 +12,9 @@ model: Claude Sonnet 5
 
 # Transport: playwright-cli (never MCP)
 
+> Repository-wide rules, lanes and constraints: **[AGENTS.md](../../AGENTS.md)**.
+> This brief covers only what is specific to generating tests.
+
 # CLI costs ~27,000 tokens/session vs ~114,000 for MCP.
 
 # Run CLI commands in terminal; read output files selectively.
