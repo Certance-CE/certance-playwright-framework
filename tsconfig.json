@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "node10",
-    "ignoreDeprecations": "6.0",
+    "module": "preserve",
     "lib": ["ES2020"],
     "strict": true,
     "esModuleInterop": true,
@@ -13,6 +11,8 @@
   },
   "include": [
     "tests/**/*.ts",
+    "framework-tests/**/*.ts",
+    "unit/**/*.ts",
     "features/**/*.ts",
     "pages/**/*.ts",
     "fixtures/**/*.ts",
