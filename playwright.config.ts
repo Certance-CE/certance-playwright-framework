@@ -146,7 +146,7 @@ export default defineConfig({
       testDir: bddOutputDir,
       grep: /@signed-out/,
       dependencies: ['setup'],
-      fullyParallel: false, // SQLite serialises writes — see the `api` project
+      workers: 1, // one writer at a time, and sign-in is rate limited — see the `api` project
       use: { ...devices['Desktop Chrome'], baseURL: APP },
     },
     // The portability lane: a different application, no auth, no download.
@@ -163,14 +163,22 @@ export default defineConfig({
       name: 'api',
       testDir: './tests/api',
       dependencies: ['setup'],
-      // Serial, deliberately. The demo application stores its data in SQLite, which
-      // serialises writes: run these in parallel and creating a project answers 500
-      // (measured — 3 of 6 failed, all of them writes; the same constraint that makes
-      // auth.setup.ts provision one account per run rather than one per scenario).
+      // One writer at a time, deliberately. The demo application stores its data in
+      // SQLite, which serialises writes: run these concurrently and creating a project
+      // answers 500 (measured — 3 of 6 failed, all of them writes; the same constraint
+      // that makes auth.setup.ts provision one account per run rather than one per
+      // scenario).
+      //
+      // `workers: 1`, NOT `fullyParallel: false`. The latter only orders tests WITHIN a
+      // file, so it looked correct while this lane had one spec and broke the moment a
+      // second was added — two files then ran against each other and the writes
+      // collided again. Playwright documents the per-project worker limit for exactly
+      // this: a resource the tests cannot share.
+      //
       // The right response is to match the concurrency the application can serve, not
       // to retry until it looks green. Point BASE_URL at a server with a real database
       // and this line is the first thing to raise.
-      fullyParallel: false,
+      workers: 1,
       use: { baseURL: APP },
     },
     // Framework self-tests: hermetic, no application involved.
