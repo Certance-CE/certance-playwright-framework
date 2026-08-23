@@ -49,6 +49,12 @@ export default defineConfig({
   fullyParallel: !process.env.CI,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // A test that fails and then passes on retry is reported as flaky, and by default
+  // the run is still GREEN. That is how this repo shipped a flaky sign-in scenario
+  // without noticing: `1 flaky` in the log, a tick on the pull request. Retries stay
+  // — a genuinely transient network fault should not fail a build — but a flake is
+  // now a failure you have to look at rather than a line you scroll past.
+  failOnFlakyTests: !!process.env.CI,
   workers: process.env.CI ? Number(process.env.PW_WORKERS) || 1 : undefined,
   timeout: 90_000,
   // Visual-regression defaults (see utils/visual.ts + skills/core/visual.md).
@@ -122,8 +128,26 @@ export default defineConfig({
       name: 'bdd:app',
       testDir: bddOutputDir,
       grep: /@app/,
+      // Scenarios that exercise signing IN cannot start from a signed-in session.
+      grepInvert: /@signed-out/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], baseURL: APP, storageState: AUTH_FILE },
+    },
+    // The same application with NO session injected.
+    //
+    // Sign-in scenarios used to run in `bdd:app` and delete the session themselves,
+    // which was flaky: `page.goto()` resolves while the application is still booting,
+    // and its auth bootstrap wrote the token back to localStorage right after the
+    // clear. Not having a session is deterministic; destroying one is a race.
+    //
+    // It still depends on `setup`, because the account it signs in AS must exist.
+    {
+      name: 'bdd:app-anon',
+      testDir: bddOutputDir,
+      grep: /@signed-out/,
+      dependencies: ['setup'],
+      fullyParallel: false, // SQLite serialises writes — see the `api` project
+      use: { ...devices['Desktop Chrome'], baseURL: APP },
     },
     // The portability lane: a different application, no auth, no download.
     {

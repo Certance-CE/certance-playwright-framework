@@ -34,6 +34,8 @@ The application must not reveal whether the username exists.
 Reloading the page while signed in returns the user to their workspace rather
 than the login form.
 
+- Covered by: `features/auth.feature` → _A signed-in session survives a page reload_
+
 ## REQ-AUTH-004 — Signing out ends the session
 
 **Priority:** high
