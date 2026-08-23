@@ -8,7 +8,8 @@
 
 Certance Lens is an **application-agnostic** Playwright + BDD framework built on
 established software-engineering practice. It runs out of the box against the
-public TodoMVC demo (`https://demo.playwright.dev`); to test your own app you
+self-hosted reference application, with the public TodoMVC demo kept as a second,
+login-free portability lane; to test your own app you
 point `BASE_URL` at it and add the Page Objects and features it needs. The folder
 structure, the fixture composition, and the skill guides stay the same.
 
@@ -42,7 +43,7 @@ Core design values:
 │  ├─ SKILL.md  │       ─► Reviewer        │  ├─ playwright.yml        │
 │  ├─ core/     │       ─► Healer          │  │   • Lint + typecheck   │
 │  ├─ pom/      │                         │  │   • Unit + mutation    │
-│  ├─ ci/       │  (Claude Code +         │  │   • BDD (TodoMVC demo) │
+│  ├─ ci/       │  (Claude Code +         │  │   • BDD (app + TodoMVC)│
 │  ├─ reporting/│   Copilot; see skills/) │  └─ security.yml          │
 │  └─ migration/│                         │      • CodeQL + dep-review │
 ├───────────────┴─────────────────────────┴───────────────────────────┤
@@ -186,18 +187,19 @@ up to date. The public reference example carries no secrets.
 
 ## 4. Adapting the framework to your own app
 
-The reference example targets the TodoMVC demo. To point Lens at your own
-application, change only these artefacts:
+The reference implementation targets a self-hosted open-source application that the
+suite starts itself, with the public TodoMVC demo kept as a second, login-free
+portability lane. To point Lens at your own application, change only these artefacts:
 
-| Artefact                     | Changes?    | Notes                                                   |
-| ---------------------------- | ----------- | ------------------------------------------------------- |
-| `BASE_URL` (env / `.env`)    | yes         | your app origin; defaults to the TodoMVC demo           |
-| `.env` / `.env.example`      | yes         | any per-environment overrides; document new vars        |
-| `pages/`                     | yes         | new Page Objects for your app                           |
-| `features/`                  | yes         | new Gherkin scenarios + step definitions                |
-| `playwright.config.ts`       | optional    | wire `storageState` if your app needs login (see below) |
-| `fixtures/`, `utils/`        | usually not | generic helpers reused as-is                            |
-| `skills/core/`, `skills/ci/` | never       | shared knowledge base, never edited per-app             |
+| Artefact                     | Changes?    | Notes                                                    |
+| ---------------------------- | ----------- | -------------------------------------------------------- |
+| `BASE_URL` (env / `.env`)    | yes         | your app origin. Setting it also SKIPS the demo download |
+| `.env` / `.env.example`      | yes         | any per-environment overrides; document new vars         |
+| `pages/`                     | yes         | new Page Objects for your app                            |
+| `features/`                  | yes         | new Gherkin scenarios + step definitions                 |
+| `playwright.config.ts`       | optional    | wire `storageState` if your app needs login (see below)  |
+| `fixtures/`, `utils/`        | usually not | generic helpers reused as-is                             |
+| `skills/core/`, `skills/ci/` | never       | shared knowledge base, never edited per-app              |
 
 ---
 
@@ -243,10 +245,19 @@ Browsers are installed via `npx playwright install --with-deps chromium` in CI.
 
 ## 7. Authentication
 
-The TodoMVC reference example needs no login, so none is wired by default — a
-fresh clone runs green with no credentials. For an app that requires auth,
-capture storage state once and set `storageState: 'test-data/.auth/user.json'` on
-the `bdd:chromium` project in `playwright.config.ts`; every scenario then starts
+Authentication is wired, and exercised against a real login. A `setup` project
+provisions an account over the application's API, signs in through the actual UI —
+so that path is proven rather than assumed — and saves the session as a
+`storageState` artefact. Projects that need a session declare
+`dependencies: ['setup']`; scenarios that test signing IN run in a project that
+injects no session at all, because destroying one is a race you cannot win reliably
+(see `skills/core/auth.md`).
+
+A fresh clone still runs green with no credentials from you: the account is created
+per run against a local instance. The older pattern below remains valid for an app
+where you supply an existing account — capture storage state once and set
+`storageState: 'test-data/.auth/user.json'` on the relevant project in
+`playwright.config.ts`; every scenario then starts
 authenticated and skips the login UI. Full guidance, including CI-safe injection,
 is in `skills/core/auth.md`.
 
@@ -274,8 +285,10 @@ Two GitHub Actions workflows, both running on `ubuntu-latest` with **no secrets*
    - **Lint + typecheck** — `npm run lint` and `npm run typecheck` (no browser).
    - **Unit + mutation** — `npm run test:unit` and `npm run test:mutation` over the
      framework's own logic; uploads the mutation report as an artefact.
-   - **BDD (TodoMVC demo)** — installs Chromium, generates specs, runs the
-     `bdd:chromium` project against the public demo; uploads the Playwright report.
+   - **BDD (self-hosted app + TodoMVC)** — installs Chromium, fetches and starts the
+     demo application, runs the signed-out and signed-in UI lanes, the API lane and
+     the TodoMVC portability lane, then publishes the test summary and the requirement
+     traceability matrix; uploads the Playwright report.
 2. **`security.yml`** (on push / PR + weekly schedule) — CodeQL analysis and
    dependency review.
 
@@ -299,14 +312,14 @@ outputs can be recombined with `npx playwright merge-reports`.
 
 The following are wired and proven in the reference example, not aspirational:
 
-| Capability           | Implementation                                                                                                 |
-| -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| API request context  | `fixtures/api.fixture.ts` (the `api` fixture) + `skills/core/api.md`                                           |
-| Visual regression    | Playwright `toHaveScreenshot` defaults in `playwright.config.ts` + `utils/visual.ts` + `skills/core/visual.md` |
-| Accessibility checks | `fixtures/a11y.fixture.ts` via `@axe-core/playwright`, surfaced under an Allure "Accessibility" epic           |
-| Test-data cleanup    | `fixtures/cleanup.fixture.ts` — LIFO disposers that run even on failure, proven by `framework-tests/cleanup.spec.ts`     |
-| Contract validation  | `utils/contract.ts` (Zod) + `framework-tests/contract.spec.ts`                                                           |
-| Performance metrics  | `fixtures/perf.fixture.ts` + `utils/performance.ts` (`web-vitals`)                                             |
+| Capability           | Implementation                                                                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| API request context  | `fixtures/api.fixture.ts` (the `api` fixture) + `skills/core/api.md`                                                 |
+| Visual regression    | Playwright `toHaveScreenshot` defaults in `playwright.config.ts` + `utils/visual.ts` + `skills/core/visual.md`       |
+| Accessibility checks | `fixtures/a11y.fixture.ts` via `@axe-core/playwright`, surfaced under an Allure "Accessibility" epic                 |
+| Test-data cleanup    | `fixtures/cleanup.fixture.ts` — LIFO disposers that run even on failure, proven by `framework-tests/cleanup.spec.ts` |
+| Contract validation  | `utils/contract.ts` (Zod) + `framework-tests/contract.spec.ts`                                                       |
+| Performance metrics  | `fixtures/perf.fixture.ts` + `utils/performance.ts` (`web-vitals`)                                                   |
 
 > **Adoption note.** The cleanup _mechanism_ ships and is proven by
 > `framework-tests/cleanup.spec.ts`. The TodoMVC reference example creates no server-side

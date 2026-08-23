@@ -24,3 +24,10 @@ Feature: Authentication
     Given I am signed in
     When I reload the page
     Then I should be signed in
+
+  @smoke @req:REQ-AUTH-004
+  Scenario: Signing out ends the browser session
+    Given I am signed in
+    When I sign out
+    Then I should not be signed in
+    And returning to the workspace should land on the sign-in form

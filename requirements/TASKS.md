@@ -61,6 +61,8 @@ and a view that deletes it are indistinguishable on screen.
 
 Setting a due date records it against the task and surfaces it in the Upcoming view.
 
-> Deliberately uncovered. Due dates, reminders and repeating tasks are a substantial
-> part of the application and none of it is tested here. Recorded so the matrix
-> reflects the real edge of coverage rather than the edge of what was convenient.
+- Covered by: `features/tasks.feature` → _A task with a due date appears in the upcoming view_
+
+The date is set over the API rather than through a date picker: driving one would make
+the scenario fail for reasons unrelated to the requirement. The assertion is in the UI,
+where a due date becomes visible to a user rather than merely stored.

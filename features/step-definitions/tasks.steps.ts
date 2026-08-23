@@ -69,3 +69,22 @@ Then('the API should report {int} task(s) in the project', async ({ api, scenari
   const tasks = await tasksInProject(api, project(scenario).id);
   expect(tasks).toHaveLength(count);
 });
+
+Given('the task {string} is due in {int} days', async ({ api, scenario }, title: string, days: number) => {
+  // Set over the API: a date picker is not what this scenario is about, and driving
+  // one would make the test fail for reasons unrelated to the requirement.
+  const tasks = await tasksInProject(api, project(scenario).id);
+  const task = tasks.find((t) => t.title === title);
+  expect(task, `no task titled "${title}" in the project`).toBeDefined();
+  const due = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+  const response = await api.post(`/api/v1/tasks/${task!.id}`, { data: { due_date: due } });
+  expect(response.status()).toBe(200);
+});
+
+When('I open the upcoming view', async ({ upcomingPage }) => {
+  await upcomingPage.open();
+});
+
+Then('the task {string} should be listed as upcoming', async ({ upcomingPage }, title: string) => {
+  await upcomingPage.expectTaskListed(title);
+});

@@ -42,3 +42,14 @@ Then('the todo {string} should be completed', async ({ todoPage }, text: string)
 Then('there should be {int} todo(s)', async ({ todoPage }, count: number) => {
   await todoPage.expectCount(count);
 });
+
+When('I rename the todo {string} to {string}', async ({ todoPage }, from: string, to: string) => {
+  await todoPage.editTodo(from, to);
+});
+
+When(
+  'I start renaming the todo {string} to {string} and press escape',
+  async ({ todoPage }, from: string, to: string) => {
+    await todoPage.editTodo(from, to, { commit: false });
+  },
+);

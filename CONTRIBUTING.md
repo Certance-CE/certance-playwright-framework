@@ -8,7 +8,7 @@ purpose — contributions should keep it fast, readable and trustworthy.
 ```bash
 npm install
 npx playwright install chromium
-npm test          # BDD suite against the TodoMVC demo
+npm test          # every lane: the self-hosted app, its API, TodoMVC, self-tests
 npm run test:unit # framework unit tests
 ```
 

@@ -62,10 +62,12 @@ A request carrying no session receives 401 rather than data.
 A signed-in user requesting a project belonging to a different account receives
 403 or 404 — never its contents.
 
-> Deliberately uncovered. Rejecting *no* session (REQ-API-005) is a much weaker
-> claim than rejecting the *wrong* session, and authorization is the property that
-> matters to a regulated buyer. Covering it needs a second provisioned account,
-> which the setup project does not yet create.
+- Covered by: `tests/api/session.api.spec.ts` → _a project cannot be reached by another account_
+
+Asserted for read, list, update **and** delete. An application that hides a project
+from a list while still accepting a `DELETE` for it is not protecting anything. The
+test also asserts the owner still gets 200, since refusing everyone would satisfy the
+other assertions.
 
 ## REQ-API-007 — The project resource matches its published contract
 

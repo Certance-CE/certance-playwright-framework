@@ -41,7 +41,7 @@ export async function createTask(api: APIRequestContext, projectId: number, titl
 export async function tasksInProject(
   api: APIRequestContext,
   projectId: number,
-): Promise<{ title: string; done: boolean }[]> {
+): Promise<{ id: number; title: string; done: boolean }[]> {
   const response = await api.get(`/api/v1/projects/${projectId}/tasks`);
   expect(response.status()).toBe(200);
   return response.json();
