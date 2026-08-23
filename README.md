@@ -1,9 +1,32 @@
 # Certance Lens
 
-**The Certance Playwright + BDD framework for web apps.** A general, opinionated
-test-automation framework that ships with a runnable example against the public
-[TodoMVC demo](https://demo.playwright.dev/todomvc), so `npm test` is green on a fresh
-clone — then you point `BASE_URL` at your own app and swap in your own Page Objects.
+**An opinionated Playwright + BDD framework for web applications.**
+
+`npm test` is green on a fresh clone, and it is not green against a toy. The suite
+starts a real open-source application, provisions an account over its API, signs in
+through the UI, and runs **42 tests across four lanes** — application UI, HTTP API,
+API contract, and the framework's own self-tests. No credentials, no hosted service,
+nothing that can be blocked by someone else's rate limiter.
+
+Then point `BASE_URL` at your own application and replace two directories.
+
+### Claims, and the command that checks each one
+
+Everything below is verifiable in under a minute on your own machine. That is the
+point of listing it this way.
+
+| Claim                                                                                  | Check it                                     |
+| -------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 9 of the 12 rules are enforced by lint, not by a style guide                           | `npm run lint`                               |
+| The lint rules are themselves unit-tested, so a rule that stops firing fails the build | `npm run test:unit`                          |
+| Every catalogued requirement is traced to a passing test — 24/24                       | `npm run coverage:requirements`              |
+| Contract checks run against what the live API actually sends                           | `npm run test:api`                           |
+| A test that fails and then passes on retry **fails the build**                         | `failOnFlakyTests` in `playwright.config.ts` |
+| Mutation testing gates the framework's own logic at 70%                                | `npm run test:mutation`                      |
+
+The contract checks found a real inconsistency in the application under test on their
+first live run, and it is pinned by a characterisation test rather than smoothed over.
+That is the difference this framework is arguing for.
 
 [![CI](https://github.com/Certance-CE/certance-playwright-framework/actions/workflows/playwright.yml/badge.svg)](https://github.com/Certance-CE/certance-playwright-framework/actions/workflows/playwright.yml)
 [![Playwright](https://img.shields.io/badge/Playwright-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
@@ -38,6 +61,29 @@ scenarios. Node 22 or newer (`.nvmrc` pins what `nvm` picks).
 
 To test **your** app, copy `.env.example` to `.env`, set `BASE_URL` to your app's origin, and
 replace `pages/` and `features/` with your own (the framework core doesn't change).
+
+---
+
+## What this is not
+
+The fastest way to judge a framework is to read what it declines to claim.
+
+- **Not a test generator.** Agent briefs are included and `AGENTS.md` tells them the
+  rules, but nothing here writes your tests for you or heals them at runtime.
+- **Visual regression and performance helpers ship, and are not exercised against the
+  reference application.** They are scaffolding with documentation, not demonstrated
+  capability — treated as such in [docs/GOLDEN_RULES.md](docs/GOLDEN_RULES.md) and not
+  counted among the proven lanes.
+- **Three of the twelve rules cannot be lint-enforced** — one scenario per test,
+  reviewing a trace, and healer discipline. They are review and CI concerns, and the
+  docs say which is which rather than rounding 9 up to 12.
+- **24/24 is 24 of the requirements written down here**, not of the application. The
+  reference app has teams, sharing, kanban and reminders, none of it catalogued. A
+  requirement never written cannot appear as a gap.
+- **Not published to npm**, and not a CLI. You fork or use the template; you own the
+  result.
+- **The reference application is a project-and-task tool.** It has auth, a REST API
+  and real authorization rules, but it is not your domain, and no demo is.
 
 ---
 

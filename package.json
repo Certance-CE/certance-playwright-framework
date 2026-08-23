@@ -1,7 +1,7 @@
 {
   "name": "certance-playwright-framework",
   "version": "1.0.0",
-  "description": "Certance Lens — a general, opinionated Playwright + BDD test-automation framework. Strict locator hierarchy, fixture-injected auth/data/network, web-first assertions, accessibility, contract, visual and performance checks, and an AI-agent skills base. Runnable out of the box against the TodoMVC demo; point BASE_URL at your own app.",
+  "description": "Certance Lens — an opinionated Playwright + BDD test-automation framework. Strict locator hierarchy, fixture-injected auth/data/network, web-first assertions, live API contract checks and requirement traceability, with 9 of its 12 rules enforced by lint. Runs green on a cold clone against a real self-hosted application; point BASE_URL at your own.",
   "keywords": [
     "playwright",
     "testing",
