@@ -2,7 +2,7 @@ import { test as setup, request } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { LoginPage } from '../pages/LoginPage';
-import { registerAccount, loginForToken } from '../features/step-definitions/support/demo-account';
+import { registerAccount } from '../features/step-definitions/support/demo-account';
 
 /**
  * Authentication setup — runs once, before anything that needs a signed-in session.
@@ -17,15 +17,23 @@ const ACCOUNT_FILE = path.join(__dirname, '../test-data/.auth/account.json');
 setup('authenticate', async ({ page }) => {
   const api = await request.newContext({ baseURL: process.env.APP_API_URL });
   const account = await registerAccount(api, `setup${Date.now()}`);
-  // The same account, as the API sees it. The API lane runs headless against this
-  // token, so the UI session and the API session belong to one user — a test can
-  // seed over HTTP and assert in the browser without the two disagreeing.
-  const apiToken = await loginForToken(api, account);
   await api.dispose();
 
   const loginPage = new LoginPage(page);
   await loginPage.login(account.username, account.password);
   await loginPage.expectSignedIn();
+
+  // Reuse the token the UI login just created rather than signing in a second time
+  // over the API. Two reasons, and the second is the one that bites:
+  //  - the API lane then runs as literally the same session as the browser, not
+  //    merely the same account;
+  //  - the application rate-limits /login and /user/token/refresh from ONE bucket,
+  //    ~8 per IP per minute, and the SPA spends most of it refreshing. Every login
+  //    the suite does not need is budget the scenarios that TEST signing in can use.
+  const apiToken = await page.evaluate(() =>
+    (globalThis as unknown as { localStorage: Storage }).localStorage.getItem('token'),
+  );
+  if (!apiToken) throw new Error('signed in, but no token in localStorage — has the app changed how it stores it?');
 
   fs.mkdirSync(path.dirname(AUTH_FILE), { recursive: true });
   await page.context().storageState({ path: AUTH_FILE });
