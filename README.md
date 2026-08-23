@@ -1,89 +1,106 @@
 # Certance Lens
 
-**An opinionated Playwright + BDD framework for web applications.**
-
-`npm test` is green on a fresh clone, and it is not green against a toy. The suite
-starts a real open-source application, provisions an account over its API, signs in
-through the UI, and runs **42 tests across four lanes** — application UI, HTTP API,
-API contract, and the framework's own self-tests. No credentials, no hosted service,
-nothing that can be blocked by someone else's rate limiter.
-
-Then point `BASE_URL` at your own application and replace two directories.
-
-### Claims, and the command that checks each one
-
-Everything below is verifiable in under a minute on your own machine. That is the
-point of listing it this way.
-
-| Claim                                                                                  | Check it                                     |
-| -------------------------------------------------------------------------------------- | -------------------------------------------- |
-| 9 of the 12 rules are enforced by lint, not by a style guide                           | `npm run lint`                               |
-| The lint rules are themselves unit-tested, so a rule that stops firing fails the build | `npm run test:unit`                          |
-| Every catalogued requirement is traced to a passing test — 24/24                       | `npm run coverage:requirements`              |
-| Contract checks run against what the live API actually sends                           | `npm run test:api`                           |
-| A test that fails and then passes on retry **fails the build**                         | `failOnFlakyTests` in `playwright.config.ts` |
-| Mutation testing gates the framework's own logic at 70%                                | `npm run test:mutation`                      |
-
-The contract checks found a real inconsistency in the application under test on their
-first live run, and it is pinned by a characterisation test rather than smoothed over.
-That is the difference this framework is arguing for.
+> **A ready-made Playwright + BDD framework for testing web applications**
+> **Built on**: Playwright · TypeScript · Gherkin · Page Object Model · GitHub Actions
+> **For**: teams who want a UI and API suite that still works in two years
 
 [![CI](https://github.com/Certance-CE/certance-playwright-framework/actions/workflows/playwright.yml/badge.svg)](https://github.com/Certance-CE/certance-playwright-framework/actions/workflows/playwright.yml)
-[![Playwright](https://img.shields.io/badge/Playwright-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Playwright](https://img.shields.io/badge/Playwright-45ba4b?style=flat&logo=playwright&logoColor=white)](https://playwright.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](./LICENSE)
 
 ---
 
-## Quick start (works on a cold clone)
+## What Makes This Framework Different
 
-```bash
-git clone https://github.com/Certance-CE/certance-playwright-framework.git
-cd certance-playwright-framework
-npm install
-npm run setup
-npm test
-```
+Most Playwright starter kits give you a folder layout. This one also enforces it.
 
-`npm run setup` fetches a browser and a demo application; `npm test` then runs against **two**
-applications and needs no credentials from you:
-
-- **A self-hosted app** — the showcase. Playwright starts it, provisions an account over its API,
-  signs in through the real UI, runs the suite and stops it. It is a real third-party application
-  (open source, unmodified), so the DOM was not written for these tests — but it runs locally, so
-  the suite works offline, behind a corporate proxy, and cannot be blocked by a hosted demo
-  deciding your CI looks like a bot.
-- **TodoMVC** — the portability lane. No login, no download; it proves the framework is not welded
-  to one application.
-
-Skip the setup step and the suite tells you exactly what to run rather than failing a dozen
-scenarios. Node 22 or newer (`.nvmrc` pins what `nvm` picks).
-
-To test **your** app, copy `.env.example` to `.env`, set `BASE_URL` to your app's origin, and
-replace `pages/` and `features/` with your own (the framework core doesn't change).
+- **Conventions enforced by tooling** — 9 of 12 rules fail the build, not the review
+- **Page Object Model** — one class per screen, injected, never constructed in a test
+- **Locator hierarchy** — role and label selectors; CSS and XPath are rejected
+- **BDD layer** — Gherkin scenarios your business stakeholders can read
+- **UI and API in one suite** — the same tests that click also verify at the source
+- **Requirements traceability** — answers "what do we cover?" in requirements, not test counts
+- **AI-agent ready** — `AGENTS.md` gives assistants the same rules as your engineers
 
 ---
 
-## What this is not
+## Quick Start
 
-The fastest way to judge a framework is to read what it declines to claim.
+```bash
+# Clone and install
+git clone https://github.com/Certance-CE/certance-playwright-framework.git
+cd certance-playwright-framework
+npm install
 
-- **Not a test generator.** Agent briefs are included and `AGENTS.md` tells them the
-  rules, but nothing here writes your tests for you or heals them at runtime.
-- **Visual regression and performance helpers ship, and are not exercised against the
-  reference application.** They are scaffolding with documentation, not demonstrated
-  capability — treated as such in [docs/GOLDEN_RULES.md](docs/GOLDEN_RULES.md) and not
-  counted among the proven lanes.
-- **Three of the twelve rules cannot be lint-enforced** — one scenario per test,
-  reviewing a trace, and healer discipline. They are review and CI concerns, and the
-  docs say which is which rather than rounding 9 up to 12.
-- **24/24 is 24 of the requirements written down here**, not of the application. The
-  reference app has teams, sharing, kanban and reminders, none of it catalogued. A
-  requirement never written cannot appear as a gap.
-- **Not published to npm**, and not a CLI. You fork or use the template; you own the
-  result.
-- **The reference application is a project-and-task tool.** It has auth, a REST API
-  and real authorization rules, but it is not your domain, and no demo is.
+# Fetch a browser and the example application
+npm run setup
+
+# Run everything — 42 tests, about 30 seconds
+npm test
+
+# Point it at your own application
+cp .env.example .env          # set BASE_URL, then replace pages/ and features/
+
+# Reports
+npm run test:report                             # Playwright HTML report
+npm test && npm run coverage:requirements       # requirement coverage matrix
+```
+
+No accounts, no API keys, no services to sign up for. Requires Node 22 or newer.
+
+> **What `npm test` actually runs.** The suite starts a small open-source web
+> application locally, registers an account through its API, signs in through the real
+> login form, and tests it — browser and API. A few tests run against a second, public
+> application to show the framework is not tied to one product.
+>
+> Running the example app locally is deliberate: tests work offline, work behind a
+> corporate proxy, and cannot break because a third-party demo site changed.
+
+---
+
+## Point It at Your Application
+
+Two directories are yours. Everything else stays as shipped.
+
+| Directory   | What goes in it                                             |
+| ----------- | ----------------------------------------------------------- |
+| `pages/`    | one class per screen — how to find and operate its controls |
+| `features/` | the scenarios you want tested, in Gherkin                   |
+
+The separation is enforced by the linter, so it cannot erode by accident. Full
+walkthrough: [Retargeting to your app](#retargeting-to-your-app).
+
+---
+
+## Verify the Claims Yourself
+
+Every claim above is a command, not an adjective.
+
+**After `npm install`:**
+
+| Claim                                                                         | Command                 |
+| ----------------------------------------------------------------------------- | ----------------------- |
+| Conventions are enforced, and each rule is tested against code that breaks it | `npm run test:unit`     |
+| A violation fails the build, warnings included                                | `npm run lint`          |
+| The framework's own logic survives mutation testing at 70%                    | `npm run test:mutation` |
+
+**After `npm run setup`:**
+
+| Claim                                                           | Command                                     |
+| --------------------------------------------------------------- | ------------------------------------------- |
+| API responses are schema-checked, so a backend change is caught | `npm run test:api`                          |
+| Every documented requirement has a passing test behind it       | `npm test && npm run coverage:requirements` |
+
+---
+
+## What It Does Not Do
+
+- **Does not write your tests** — it instructs AI assistants; it does not replace you
+- **Does not silently repair broken tests** — no runtime self-healing, by design
+- **Visual and performance helpers are included but unproven** — starting points, not verified capability
+- **3 of 12 conventions are judgement calls** — see the [enforcement table](docs/GOLDEN_RULES.md)
+- **Not an npm package** — fork it or use the template; you own the result
 
 ---
 
