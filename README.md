@@ -86,6 +86,20 @@ decisions in [`docs/decisions/`](./docs/decisions).
 
 ---
 
+## Working with AI agents
+
+[AGENTS.md](AGENTS.md) is the single instruction file every AI coding agent reads —
+the lanes, the enforced rules, the constraints of the application under test, and what
+to run before opening a pull request. `.github/copilot-instructions.md` and the agent
+briefs in `.github/agents/` point at it rather than restating it.
+
+That is not tidiness for its own sake. The previous copy told agents to mock with
+`page.route()` and to import faker directly, and the lint rules now reject both — an
+instruction file that has drifted is worse than none, because it generates work that
+fails review.
+
+---
+
 ## Where the tests live
 
 Four lanes, deliberately separate. If you open `tests/` and wonder where the rest
