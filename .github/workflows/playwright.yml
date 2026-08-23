@@ -96,7 +96,7 @@ jobs:
       # and runs the suite, then stops it. No hosted dependency, so no third party can
       # decide this build looks like a bot.
       - name: Run BDD showcase (self-hosted app)
-        run: npx playwright test --project=setup --project=bdd:app
+        run: npx playwright test --project=setup --project=bdd:app --project=bdd:app-anon
 
       # The API lane: the same application over HTTP, no browser. Seconds, not minutes.
       - name: Run API lane

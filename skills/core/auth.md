@@ -114,24 +114,70 @@ Run selectively: `npx playwright test --project=bdd:admin --grep @as-admin`
 
 ---
 
-## 4. Auth scenarios — clearing cookies
+## 4. Scenarios that test signing in — give them no session
 
-Authentication feature tests (a `features/auth.feature` of your own) test the
-login UI itself. They must clear the saved auth state before running:
+Authentication scenarios (a `features/auth.feature` of your own) exercise the login
+UI itself, so they cannot start from a signed-in session.
+
+**Do not destroy the session inside the test.** Run them in a project that never
+injects one:
 
 ```typescript
-Given('I am signed out', async ({ page }) => {
-  // You must be on the origin before localStorage is reachable.
-  await page.goto('/');
-  await page.evaluate(() => (globalThis as unknown as { localStorage: Storage }).localStorage.clear());
-  await page.context().clearCookies();
+// playwright.config.ts
+{
+  name: 'bdd:app',                 // signed in
+  grep: /@app/,
+  grepInvert: /@signed-out/,       // sign-in scenarios can never land here
+  dependencies: ['setup'],
+  use: { storageState: 'test-data/.auth/user.json' },
+},
+{
+  name: 'bdd:app-anon',            // no session at all
+  grep: /@signed-out/,
+  dependencies: ['setup'],         // the account must still exist to sign in AS
+  use: {},                         // no storageState
+},
+```
+
+The step then asserts the starting state rather than creating it:
+
+```typescript
+Given('I am signed out', async ({ loginPage }) => {
+  await loginPage.open();
+  await loginPage.expectStillOnSignIn();
 });
 ```
 
-**Clearing cookies is not signing out.** Most single-page applications keep their token in
-`localStorage`, not a cookie — the reference app does. Clear only cookies and the user stays
-signed in, the login form never renders, and the failure looks like a broken locator rather
-than a session that refused to end. Clear both.
+### Why not just clear the storage
+
+This framework shipped the clearing version, and it was **flaky** — masked in CI by
+`retries: 2`, so the job stayed green while the test failed on first attempt:
+
+```typescript
+// The version that was wrong. Do not copy it.
+await page.goto('/');
+await page.evaluate(() => localStorage.clear());
+await page.context().clearCookies();
+```
+
+Two separate traps are stacked here, and fixing only the first is what makes it
+flaky rather than broken:
+
+1. **Clearing cookies is not signing out.** Most single-page applications keep the
+   token in `localStorage` — the reference app does. Clear only cookies and the user
+   stays signed in, the login form never renders, and it looks like a broken locator.
+2. **Clearing `localStorage` is not signing out either.** `page.goto()` resolves when
+   the DOM is ready, while the application is still booting. Its auth bootstrap then
+   writes the token **back** immediately after the clear. Measured on the reference
+   app: `keys=["token"]` on the very next line after `localStorage.clear()`, and
+   `/login` then redirected to the signed-in home. Whether the clear survives depends
+   on how fast the machine is.
+
+You are racing the application's own start-up, and you cannot win that race
+reliably — only often enough to look fixed. Not having a session has no race in it.
+
+**The general rule: a test that has to destroy state in order to begin is running in
+the wrong project.** The same argument applies to destructive flows (§7).
 
 ---
 
