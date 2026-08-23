@@ -44,6 +44,22 @@ const APP_BIN = process.platform === 'win32' ? '.bin\\vikunja.exe' : './.bin/vik
 // becomes `/register` on the origin. Callers pass the full path instead.
 process.env.APP_API_URL ||= APP;
 
+// Every lane that WRITES to the demo application runs one worker at a time.
+//
+// The app stores its data in SQLite, which serialises writes: concurrent writers get
+// HTTP 500 from the very first create. This has now bitten three separate lanes, each
+// time on the run where that lane first started writing — so it is named here once
+// rather than rediscovered per project.
+//
+// `workers: 1`, NOT `fullyParallel: false`: the latter only orders tests within a FILE,
+// so it appears to work right up until a second spec file is added. Playwright documents
+// the per-project worker limit for exactly this — a resource the tests cannot share.
+//
+// Lanes that touch no application (framework self-tests) and the TodoMVC lane are
+// unaffected and stay fully parallel. Point BASE_URL at a server with a real database
+// and this is the first thing to raise.
+const SERIALISED_WRITES = { workers: 1 } as const;
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: !process.env.CI,
@@ -131,6 +147,7 @@ export default defineConfig({
       // Scenarios that exercise signing IN cannot start from a signed-in session.
       grepInvert: /@signed-out/,
       dependencies: ['setup'],
+      ...SERIALISED_WRITES,
       use: { ...devices['Desktop Chrome'], baseURL: APP, storageState: AUTH_FILE },
     },
     // The same application with NO session injected.
@@ -146,7 +163,7 @@ export default defineConfig({
       testDir: bddOutputDir,
       grep: /@signed-out/,
       dependencies: ['setup'],
-      workers: 1, // one writer at a time, and sign-in is rate limited — see the `api` project
+      ...SERIALISED_WRITES, // sign-in is additionally rate limited by the app
       use: { ...devices['Desktop Chrome'], baseURL: APP },
     },
     // The portability lane: a different application, no auth, no download.
@@ -163,22 +180,7 @@ export default defineConfig({
       name: 'api',
       testDir: './tests/api',
       dependencies: ['setup'],
-      // One writer at a time, deliberately. The demo application stores its data in
-      // SQLite, which serialises writes: run these concurrently and creating a project
-      // answers 500 (measured — 3 of 6 failed, all of them writes; the same constraint
-      // that makes auth.setup.ts provision one account per run rather than one per
-      // scenario).
-      //
-      // `workers: 1`, NOT `fullyParallel: false`. The latter only orders tests WITHIN a
-      // file, so it looked correct while this lane had one spec and broke the moment a
-      // second was added — two files then ran against each other and the writes
-      // collided again. Playwright documents the per-project worker limit for exactly
-      // this: a resource the tests cannot share.
-      //
-      // The right response is to match the concurrency the application can serve, not
-      // to retry until it looks green. Point BASE_URL at a server with a real database
-      // and this line is the first thing to raise.
-      workers: 1,
+      ...SERIALISED_WRITES,
       use: { baseURL: APP },
     },
     // Framework self-tests: hermetic, no application involved. They live in
