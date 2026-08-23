@@ -1,0 +1,50 @@
+name: Bug report
+description: Something in the framework behaves differently from what it documents.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: if a test is failing against **your own** application, that is
+        usually a locator or an application constraint rather than a framework bug.
+        `docs/GOLDEN_RULES.md` and `skills/core/auth.md` cover the common causes.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the command you ran and the output. Trimmed logs are fine.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and where it says so
+      description: A link to the README, a skill guide or a doc comment makes this quick to settle.
+    validations:
+      required: true
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Which lane
+      options:
+        - API (tests/api)
+        - App UI (features, demo application)
+        - Portability (TodoMVC)
+        - Framework self-tests (framework-tests)
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Node and OS
+      placeholder: node 24.4.0, macOS 15.2
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I ran `npm run lint` and `npm run typecheck`
+        - label: I ran `npm run bdd:gen` if this involves a `.feature` file
