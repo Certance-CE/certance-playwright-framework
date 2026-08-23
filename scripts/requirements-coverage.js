@@ -3,7 +3,8 @@
  * Requirement traceability & coverage (front-end of the coverage report).
  *
  * Reads requirements/*.md (the requirement catalogue), features/*.feature (which
- * scenarios carry @req:<ID> tags), and allure-results (each scenario's status),
+ * scenarios carry @req:<ID> tags), and allure-results (each test's status, and the
+ * requirements claimed by non-BDD specs, which no .feature file mentions),
  * then computes per requirement:
  *   covered  — a scenario tagged @req:<ID> exists and passed
  *   failing  — a scenario exists but none passed
@@ -91,7 +92,7 @@ function loadFeatureRefs() {
 
 // ── 3. Test status per requirement from allure-results (req:<ID> tag labels) ──
 function loadResultStatus() {
-  const byReq = {}; // req id -> {passed, failed}
+  const byReq = {}; // req id -> {passed, failed, names:Set}
   if (!fs.existsSync(RESULTS_DIR)) return byReq;
   for (const f of fs.readdirSync(RESULTS_DIR).filter((f) => f.endsWith('-result.json'))) {
     let r;
@@ -104,7 +105,10 @@ function loadResultStatus() {
       .filter((l) => l.name === 'tag' && l.value.startsWith('req:'))
       .map((l) => l.value.slice(4));
     for (const id of reqTags) {
-      const s = (byReq[id] = byReq[id] || { passed: 0, failed: 0 });
+      const s = (byReq[id] = byReq[id] || { passed: 0, failed: 0, names: new Set() });
+      // Record the test's own name so a requirement covered by a plain spec — an API
+      // test, say — still shows WHAT covers it, not just that something does.
+      if (r.name) s.names.add(r.name);
       if (r.status === 'passed') s.passed++;
       else if (r.status === 'failed' || r.status === 'broken') s.failed++;
     }
@@ -118,8 +122,12 @@ function main() {
   const status = loadResultStatus();
 
   const rows = reqs.map((req) => {
-    const scenarios = refs[req.id] || [];
     const st = status[req.id];
+    // Gherkin scenarios are found by scanning .feature files; anything else — a plain
+    // Playwright spec, an API test — is found by the requirement label it reported.
+    // Without the second source a requirement covered outside BDD reads as a gap,
+    // which would make the matrix lie about the very lanes it is meant to trace.
+    const scenarios = refs[req.id] || [...(st?.names ?? [])];
     let state;
     if (scenarios.length === 0) state = 'gap';
     else if (st && st.passed > 0) state = 'covered';

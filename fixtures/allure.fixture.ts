@@ -18,6 +18,7 @@ import { epic, feature, severity, label } from 'allure-js-commons';
 const EPIC_BY_TAG: Record<string, string> = {
   authentication: 'Authentication',
   todos: 'Todo list',
+  'task-management': 'Task management',
 };
 
 const SEVERITY_BY_TAG: Record<string, string> = {

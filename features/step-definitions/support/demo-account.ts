@@ -36,3 +36,23 @@ export async function registerAccount(api: APIRequestContext, seed: string): Pro
   }
   return { username, password };
 }
+
+/**
+ * Exchange credentials for a bearer token.
+ *
+ * The API lane needs a token, and the only honest way to get one is the endpoint a
+ * real client would use. Asserting the shape rather than `response.ok()` for the same
+ * reason registration does: a single-page application answers 200 with HTML for a
+ * route it does not know, and a token of `undefined` fails later as a puzzling 401.
+ */
+export async function loginForToken(api: APIRequestContext, account: DemoAccount): Promise<string> {
+  const response = await api.post('/api/v1/login', { data: account });
+  if (!response.ok()) {
+    throw new Error(`could not sign in as ${account.username} (HTTP ${response.status()}): ${await response.text()}`);
+  }
+  const body = await response.json().catch(() => null);
+  if (!body || typeof body.token !== 'string' || body.token.length === 0) {
+    throw new Error(`login returned ${response.status()} but no token — check APP_API_URL (${response.url()})`);
+  }
+  return body.token;
+}
