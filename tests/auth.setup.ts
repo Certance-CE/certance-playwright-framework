@@ -2,7 +2,7 @@ import { test as setup, request } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { LoginPage } from '../pages/LoginPage';
-import { registerAccount } from '../features/step-definitions/support/demo-account';
+import { registerAccount, loginForToken } from '../features/step-definitions/support/demo-account';
 
 /**
  * Authentication setup — runs once, before anything that needs a signed-in session.
@@ -17,6 +17,10 @@ const ACCOUNT_FILE = path.join(__dirname, '../test-data/.auth/account.json');
 setup('authenticate', async ({ page }) => {
   const api = await request.newContext({ baseURL: process.env.APP_API_URL });
   const account = await registerAccount(api, `setup${Date.now()}`);
+  // The same account, as the API sees it. The API lane runs headless against this
+  // token, so the UI session and the API session belong to one user — a test can
+  // seed over HTTP and assert in the browser without the two disagreeing.
+  const apiToken = await loginForToken(api, account);
   await api.dispose();
 
   const loginPage = new LoginPage(page);
@@ -34,5 +38,5 @@ setup('authenticate', async ({ page }) => {
   // application, and the framework's job is to work with it rather than generate load it
   // cannot serve. The file sits beside the storageState artefact and is git-ignored;
   // it holds a throwaway account on an ephemeral local instance.
-  fs.writeFileSync(ACCOUNT_FILE, JSON.stringify(account, null, 2));
+  fs.writeFileSync(ACCOUNT_FILE, JSON.stringify({ ...account, apiToken }, null, 2));
 });

@@ -98,6 +98,10 @@ jobs:
       - name: Run BDD showcase (self-hosted app)
         run: npx playwright test --project=setup --project=bdd:app
 
+      # The API lane: the same application over HTTP, no browser. Seconds, not minutes.
+      - name: Run API lane
+        run: npx playwright test --project=api
+
       # The portability lane: a different application, proving the framework is not
       # welded to one target.
       - name: Run BDD suite (TodoMVC)

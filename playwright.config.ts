@@ -132,11 +132,30 @@ export default defineConfig({
       grepInvert: /@app/,
       use: { ...devices['Desktop Chrome'], baseURL: TODOMVC },
     },
+    // The API lane: the same application over HTTP, with no browser at all. Signed in
+    // as the account `setup` provisioned, so this session and the UI session are one
+    // user — state seeded here is visible to the browser lanes.
+    {
+      name: 'api',
+      testDir: './tests/api',
+      dependencies: ['setup'],
+      // Serial, deliberately. The demo application stores its data in SQLite, which
+      // serialises writes: run these in parallel and creating a project answers 500
+      // (measured — 3 of 6 failed, all of them writes; the same constraint that makes
+      // auth.setup.ts provision one account per run rather than one per scenario).
+      // The right response is to match the concurrency the application can serve, not
+      // to retry until it looks green. Point BASE_URL at a server with a real database
+      // and this line is the first thing to raise.
+      fullyParallel: false,
+      use: { baseURL: APP },
+    },
     // Framework self-tests: hermetic, no application involved.
     {
       name: 'chromium',
       testDir: './tests',
-      testIgnore: /auth\.setup\.ts/,
+      // The API lane needs a running application; these do not. Keeping it out means
+      // `--project=chromium` stays the lane you can run on a plane.
+      testIgnore: [/auth\.setup\.ts/, /tests[\\/]api[\\/]/],
       use: { ...devices['Desktop Chrome'], baseURL: TODOMVC },
     },
   ],

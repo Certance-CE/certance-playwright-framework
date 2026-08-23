@@ -31,6 +31,72 @@ API-only contract tests belong in `tests/api/` as `*.contract.spec.ts`, using th
 configured. The framework ships the `api` fixture and the schema validator; the specs
 themselves are yours to add for the API under test.
 
+## The API lane — a project with no browser
+
+The reference implementation ships `tests/api/tasks.api.spec.ts`, run by the `api`
+project in `playwright.config.ts`:
+
+```bash
+npm run test:api          # or: npx playwright test --project=api
+```
+
+It declares `dependencies: ['setup']`, so the setup project provisions an account,
+signs in, and publishes both the browser session (`storageState`) and a bearer
+token. The `api` fixture picks that token up automatically when `APP_API_TOKEN` is
+not set — which is what lets a cold `npm test` exercise the API against a fresh
+account with nothing in `.env`. **A UI test and an API test therefore act as the
+same user**, so one can seed over HTTP and the other assert in the page.
+
+Six tests, under four seconds, no browser started.
+
+### Match the concurrency the application can actually serve
+
+The API lane is configured `fullyParallel: false`, and that is a deliberate
+decision rather than a workaround.
+
+The reference application stores its data in SQLite, which serialises writes. Run
+the lane in parallel and creating a project answers **HTTP 500** — measured: 3 of 6
+tests failed, every one of them a write, all 6 passed with `--workers=1`. It is the
+same constraint that makes the setup project provision one account per run instead
+of one per scenario.
+
+The tempting fixes are the wrong ones. Retrying until it looks green converts a
+real capacity limit into flake you will chase for weeks; lowering the global worker
+count punishes every other lane for one application's storage engine. Set the
+concurrency on the project that needs it, write down why, and raise it when the
+application under test can serve more:
+
+```typescript
+{
+  name: 'api',
+  testDir: './tests/api',
+  dependencies: ['setup'],
+  fullyParallel: false,   // SQLite serialises writes; see above
+  use: { baseURL: APP },
+}
+```
+
+**Generalisation worth keeping:** a 500 under parallel load is information about the
+system under test, not noise to be suppressed. Find out which it is before you
+reach for a retry.
+
+### Assert the shape, not just the status
+
+Every helper in the lane checks the response _shape_, never `response.ok()` alone:
+
+```typescript
+expect(response.status()).toBe(201);
+const body = await response.json();
+expect(body).toHaveProperty('id');
+```
+
+A single-page application serves its shell for any route it does not recognise, so
+a mistyped path returns **200 with HTML**. `ok()` is true, nothing was created, and
+the failure surfaces much later somewhere unrelated. This framework has been bitten
+by exactly that (see `skills/core/auth.md`).
+
+---
+
 ## Schema validation — catch provider drift (`utils/contract.ts`)
 
 `expectSchema(response, schema)` asserts a response is 2xx **and** that its JSON
