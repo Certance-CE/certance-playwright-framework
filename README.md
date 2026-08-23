@@ -43,6 +43,11 @@ replace `pages/` and `features/` with your own (the framework core doesn't chang
 
 ## The opinionated rules — and why
 
+Twelve rules. **Nine are enforced by lint**, and the lint rules are themselves
+unit-tested so one that stops firing fails the build. The other three are not
+statically decidable; [docs/GOLDEN_RULES.md](docs/GOLDEN_RULES.md) says which is which,
+and why.
+
 The value here isn't a Playwright wrapper; it's a set of conventions that keep a suite fast,
 readable and trustworthy as it grows. Five of the twelve are enforced by ESLint at
 `--max-warnings=0` (the lint rules are themselves unit-tested, so one that stops firing fails

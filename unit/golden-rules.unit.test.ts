@@ -30,6 +30,9 @@ async function lint(code: string, filePath: string) {
 const SPEC = 'tests/probe.spec.ts';
 const PAGE = 'pages/ProbePage.ts';
 const UTIL = 'utils/probe.ts';
+const FIXTURE = 'fixtures/probe.fixture.ts';
+const SETUP = 'tests/probe.setup.ts';
+const SELFTEST = 'framework-tests/probe.spec.ts';
 
 describe('golden rules are machine-enforced', () => {
   it('rejects driving the page directly from a spec (rule 2: Page Objects)', async () => {
@@ -83,6 +86,98 @@ describe('golden rules are machine-enforced', () => {
     ].join('\n');
     const messages = await lint(code, PAGE);
     expect(messages.filter((m) => m.severity === 2)).toEqual([]);
+  });
+
+  it('rejects beforeEach in test code (rule 3: shared setup lives in fixtures)', async () => {
+    const messages = await lint(`test.beforeEach(async ({ page }) => { await page.goto('/'); });`, SPEC);
+    expect(messages.some((m) => /Golden rule #3/.test(m.message))).toBe(true);
+  });
+
+  it('rejects serial mode and module-scoped mutable state (rule 4: independence)', async () => {
+    for (const code of [
+      `test.describe.configure({ mode: 'serial' });`,
+      `test.describe.serial('group', () => {});`,
+      `let sharedId = 0;`,
+    ]) {
+      const messages = await lint(code, SPEC);
+      expect(
+        messages.some((m) => /Golden rule #4/.test(m.message)),
+        `expected to reject: ${code}`,
+      ).toBe(true);
+    }
+  });
+
+  it('allows a framework self-test to order itself (rule 4 is about tests of an APPLICATION)', async () => {
+    // framework-tests/cleanup.spec.ts proves teardown runs after a FAILING test, so
+    // it must be ordered. The rule would make that self-test impossible to write.
+    const messages = await lint(`test.describe.configure({ mode: 'serial' });\nconst disposed = [];`, SELFTEST);
+    expect(messages.filter((m) => /Golden rule #4/.test(m.message))).toEqual([]);
+  });
+
+  it('rejects page.route() in test code (rule 6: mock through the network fixture)', async () => {
+    const messages = await lint(`await page.route('**/pay', (r) => r.fulfill({ status: 200 }));`, SPEC);
+    expect(messages.some((m) => /Golden rule #6/.test(m.message))).toBe(true);
+  });
+
+  it('rejects literal email addresses and direct faker use (rule 7: synthetic data only)', async () => {
+    const email = await lint(`const user = 'joan.smith@realcompany.com';`, SPEC);
+    expect(email.some((m) => /Golden rule #7/.test(m.message))).toBe(true);
+
+    const faker = await lint(`import { faker } from '@faker-js/faker';\nconst n = faker;`, SPEC);
+    expect(faker.some((m) => /Golden rule #7/.test(m.message))).toBe(true);
+  });
+
+  it('rejects constructing a Page Object by hand (rule 11: inject via fixtures)', async () => {
+    const messages = await lint(`const loginPage = new LoginPage(page);`, SPEC);
+    expect(messages.some((m) => /Golden rule #11/.test(m.message))).toBe(true);
+  });
+
+  it('allows a setup project to construct one (no fixtures exist before setup runs)', async () => {
+    const messages = await lint(`const loginPage = new LoginPage(page);`, SETUP);
+    expect(messages.filter((m) => /Golden rule #11/.test(m.message))).toEqual([]);
+  });
+
+  it('rejects naming the application inside the core (rule 12)', async () => {
+    for (const filePath of [UTIL, FIXTURE]) {
+      const messages = await lint(`export const binary = './.bin/vikunja';`, filePath);
+      expect(
+        messages.some((m) => /Golden rule #12/.test(m.message)),
+        `expected the application name to be rejected in ${filePath}`,
+      ).toBe(true);
+    }
+  });
+
+  it('rejects force: true (rule 5: never switch off actionability)', async () => {
+    // The rule this repo learned the hard way on a screen-reader-only checkbox.
+    const messages = await lint(`await page.getByRole('checkbox').check({ force: true });`, SPEC);
+    expect(messages.some((m) => m.ruleId === 'playwright/no-force-option')).toBe(true);
+  });
+
+  it('rejects element handles, page.$eval and networkidle (rule 5: keep auto-waiting)', async () => {
+    const cases = [
+      [`const h = await page.$('#a');`, 'playwright/no-element-handle'],
+      [`await page.$eval('#a', (e) => e.textContent);`, 'playwright/no-eval'],
+      [`await page.waitForLoadState('networkidle');`, 'playwright/no-networkidle'],
+    ] as const;
+    for (const [code, ruleId] of cases) {
+      const messages = await lint(code, SPEC);
+      expect(
+        messages.some((m) => m.ruleId === ruleId),
+        `expected ${ruleId} for: ${code}`,
+      ).toBe(true);
+    }
+  });
+
+  it('keeps every earlier rule alive alongside the new ones', async () => {
+    // no-restricted-syntax does not MERGE across config blocks — a later block
+    // replaces the list. This is the regression test for someone adding a block and
+    // silently switching off rules 1 and 2.
+    const messages = await lint(
+      `test('x', async ({ page }) => { await page.click('#a'); const el = page.locator('.b'); });`,
+      SPEC,
+    );
+    expect(messages.some((m) => /Golden rule #1/.test(m.message))).toBe(true);
+    expect(messages.some((m) => /Golden rule #2/.test(m.message))).toBe(true);
   });
 
   it('reports every violation as an error, never a warning', async () => {

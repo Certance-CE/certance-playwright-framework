@@ -70,6 +70,10 @@ generated, reviewed, or modified in a Certance Lens project.
 > | 11 · Fixtures inject Page Objects | review                                                                            |
 > | 12 · Application-agnostic core    | **lint** — `utils/` importing `pages/` or `features/` is an error                 |
 >
+> **Nine of these twelve are enforced by lint.** Which mechanism holds up each rule —
+> lint, configuration, CI gate or review — is set out in `docs/GOLDEN_RULES.md`,
+> including why three of them are not statically decidable and are not claimed to be.
+>
 > The lint rules are themselves tested (`unit/golden-rules.unit.test.ts`): each one is run
 > against code that should break it, so a rule that stops firing fails the build.
 > `npm run lint:fix` autofixes what it can; `npm run format` runs Prettier.
