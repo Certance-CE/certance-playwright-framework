@@ -181,6 +181,39 @@ the wrong project.** The same argument applies to destructive flows (§7).
 
 ---
 
+## 4b. Budget your sign-ins — the limiter is shared
+
+Applications rate-limit authentication, and the budget is usually smaller and wider
+than you expect. Measured against the reference application:
+
+| Question                   | Answer                                                        |
+| -------------------------- | ------------------------------------------------------------- |
+| Limit                      | ~8 requests per IP per ~60s                                   |
+| Keyed by                   | **IP**, not username — a fresh account does not reset it      |
+| Counts failures?           | **Yes.** A rejected password costs the same as a good one     |
+| Counts ordinary API calls? | No. 40 authenticated requests cost nothing                    |
+| Configurable?              | **No.** Setting `ratelimit.*` changed nothing; it is separate |
+
+The trap is the last row of what shares that bucket: **`/user/token/refresh` draws on
+it too**, and a single-page application refreshes constantly. Measured during one run:
+12 refresh calls in 7 seconds, the last six already `429` — after which the scenarios
+that actually sign in had no budget left and failed.
+
+That failure does not look like a rate limit. It looks like a flaky login.
+
+Three habits keep a suite inside the budget:
+
+1. **Sign in once per run, not once per lane.** The setup project takes the token from
+   the session the UI login already created (`localStorage`) rather than signing in
+   again over the API. One login, and the API lane runs as literally the same session.
+2. **Order the lanes.** Scenarios that sign in should run BEFORE lanes that keep a
+   browser session alive and churn refreshes — in this repo, expressed as
+   `dependencies: ['setup', 'bdd:app-anon']` so it cannot silently drift.
+3. **Do not hunt flake with `--repeat-each`.** Against a rate-limited application it
+   manufactures the failure it is meant to detect. Run the suite repeatedly instead.
+
+---
+
 ## 5. Auth state expiry
 
 Storage state files expire when session cookies expire. Signs of expiry:

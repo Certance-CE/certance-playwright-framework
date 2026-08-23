@@ -146,7 +146,13 @@ export default defineConfig({
       grep: /@app/,
       // Scenarios that exercise signing IN cannot start from a signed-in session.
       grepInvert: /@signed-out/,
-      dependencies: ['setup'],
+      // Ordered AFTER the sign-in lane, deliberately. The application rate-limits
+      // /login and /user/token/refresh from a single bucket — roughly 8 per IP per
+      // minute — and this lane's browser sessions spend most of it on refreshes
+      // (measured: 12 refresh calls in 7 seconds, the last six already 429). Running
+      // it first left the scenarios that actually sign in with no budget, which
+      // showed up as a flaky login rather than as the rate limit it was.
+      dependencies: ['setup', 'bdd:app-anon'],
       ...SERIALISED_WRITES,
       use: { ...devices['Desktop Chrome'], baseURL: APP, storageState: AUTH_FILE },
     },
