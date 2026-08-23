@@ -71,3 +71,8 @@ Two deliberate choices in the configuration:
 ## Reporting security issues
 
 Please do not open a public issue for security problems — see [SECURITY.md](./SECURITY.md).
+
+## Code of conduct
+
+By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Disagreement
+about the framework's opinions is welcome and useful; disagreement about people is not.
