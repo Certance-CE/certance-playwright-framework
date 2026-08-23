@@ -1,0 +1,29 @@
+title: '[Adoption] '
+labels: [adoption]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For pointing the framework at your own application — and for saying what did
+        not fit. Reports of where the opinions are wrong are more useful than reports
+        of where they worked.
+  - type: input
+    id: app
+    attributes:
+      label: What are you testing
+      description: The kind of application, not its name. "A regulated payments back office" is plenty.
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: What was awkward
+      description: |
+        The locator hierarchy, the Page Object requirement, BDD, the fixtures, the
+        rate of change — whatever cost you time. This is the useful half.
+    validations:
+      required: true
+  - type: textarea
+    id: kept
+    attributes:
+      label: What you kept, and what you removed

@@ -1,0 +1,21 @@
+name: Adoption question
+description: Pointing the framework at your own application.
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Set `BASE_URL` to your application and the demo download is skipped entirely.
+        `AGENTS.md` has the lane map; `skills/core/auth.md` covers sign-in patterns.
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to do
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you have tried
+    validations:
+      required: true

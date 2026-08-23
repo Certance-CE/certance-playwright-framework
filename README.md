@@ -131,6 +131,30 @@ npm run test:headed   # watch a real browser drive it
 
 ---
 
+## Using this as a template
+
+This repository is a GitHub template. **Use this template → Create a new repository**
+gives you the framework with no history, ready to point at your own application.
+
+What to do first, in order:
+
+1. `npm install && npm run setup && npm test` — confirm it is green before you change
+   anything, so a later failure is unambiguously yours.
+2. Set `BASE_URL` to your application. The demo download is then skipped entirely, and
+   the `@app` lane runs against you instead.
+3. Replace `pages/` and `features/` — those two directories are the only
+   application-specific ones. `fixtures/`, `utils/` and `skills/` are the reusable
+   core, and lint enforces that they stay that way.
+4. Rewrite `requirements/*.md` for your own requirements, or delete them and let the
+   matrix report zero until you do. An empty matrix is honest; a stale one is not.
+5. Keep `framework-tests/` — they test the machinery you have just inherited, and they
+   need no application at all.
+
+`AGENTS.md` is worth reading even if you do not use AI agents: it is the shortest
+accurate description of how the repository is laid out.
+
+---
+
 ## Retargeting to your app
 
 The core is application-agnostic by design (see

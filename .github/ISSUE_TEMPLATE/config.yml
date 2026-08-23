@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/Certance-CE/certance-playwright-framework/discussions
+    about: Adoption questions, patterns and opinions belong in Discussions.
+  - name: Security
+    url: https://github.com/Certance-CE/certance-playwright-framework/security/policy
+    about: Report a vulnerability privately, not as a public issue.
