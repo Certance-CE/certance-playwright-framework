@@ -3,6 +3,7 @@ import { BasePage } from '../pages/BasePage';
 import { TodoPage } from '../pages/TodoPage';
 import { LoginPage } from '../pages/LoginPage';
 import { ProjectPage } from '../pages/ProjectPage';
+import { UpcomingPage } from '../pages/UpcomingPage';
 
 /**
  * Page Object fixtures — one entry per Page Object class.
@@ -19,6 +20,7 @@ export type PageFixtures = {
   todoPage: TodoPage;
   loginPage: LoginPage;
   projectPage: ProjectPage;
+  upcomingPage: UpcomingPage;
 };
 
 export const test = base.extend<PageFixtures>({
@@ -33,5 +35,8 @@ export const test = base.extend<PageFixtures>({
   },
   projectPage: async ({ page }, use) => {
     await use(new ProjectPage(page));
+  },
+  upcomingPage: async ({ page }, use) => {
+    await use(new UpcomingPage(page));
   },
 });

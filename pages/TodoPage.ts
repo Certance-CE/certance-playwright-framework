@@ -44,6 +44,22 @@ export class TodoPage extends BasePage {
     await this.page.getByRole('button', { name: 'Clear completed' }).click();
   }
 
+  /**
+   * Rename a todo. TodoMVC reveals an edit field on double-click; the field carries
+   * an accessible name of its own, so no CSS is needed to reach it.
+   *
+   * `commit: false` presses Escape instead of Enter, which must DISCARD the change.
+   * Both paths matter: a rename that cannot be abandoned is as broken as one that
+   * cannot be saved, and only one of them is usually tested.
+   */
+  async editTodo(from: string, to: string, { commit = true } = {}) {
+    await this.item(from).dblclick();
+    const field = this.page.getByRole('textbox', { name: 'Edit' });
+    await expect(field).toBeVisible();
+    await field.fill(to);
+    await field.press(commit ? 'Enter' : 'Escape');
+  }
+
   async expectVisible(text: string) {
     await expect(this.item(text)).toBeVisible();
   }

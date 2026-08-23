@@ -50,6 +50,8 @@ Clearing completed removes every complete item and leaves incomplete ones intact
 Double-clicking a todo makes its text editable; the new text replaces the old on
 commit and is discarded on escape.
 
-> Deliberately uncovered — TodoMVC supports editing and the framework does not
-> test it. A matrix that reported 100% would be describing its own scenarios
-> rather than the application.
+- Covered by: `features/todos.feature` → _Rename a todo, and abandon a rename_
+
+Both paths are asserted: Enter commits, Escape discards. A rename that cannot be
+abandoned is as broken as one that cannot be saved, and only one of the two is
+usually tested.

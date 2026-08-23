@@ -43,7 +43,10 @@ than the login form.
 After signing out, the session is no longer usable: navigating back to an
 authenticated route lands on the login form, and the stored token is gone.
 
-> Deliberately uncovered. Sign-out is session-destructive, so a scenario for it
-> needs the throwaway-session isolation described in `skills/core/auth.md` §7
-> rather than the shared login. This requirement is what the traceability matrix
-> is for: the gap is visible and labelled instead of silently absent.
+- Covered by: `features/auth.feature` → _Signing out ends the browser session_
+
+> Scope note: this requirement is about the **browser** session, which is what a user
+> controls. The token is not revoked server-side — measured, and pinned by
+> `tests/api/session.api.spec.ts`. That is the usual trade-off of stateless JWTs, but
+> it means a leaked token outlives the user clicking "log out", and a UI-only test
+> would have reported success while hiding it.

@@ -40,3 +40,10 @@ Feature: Task management
     Then the task "Old invoice" should not be listed
     And the task "Still outstanding" should be listed
     And the API should report 2 tasks in the project
+
+  @regression @req:REQ-TASK-005
+  Scenario: A task with a due date appears in the upcoming view
+    Given the project already has the task "Pay the quarterly levy"
+    And the task "Pay the quarterly levy" is due in 3 days
+    When I open the upcoming view
+    Then the task "Pay the quarterly levy" should be listed as upcoming

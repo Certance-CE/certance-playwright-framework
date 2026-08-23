@@ -39,3 +39,13 @@ Feature: Todo list
     When I clear completed todos
     Then the todo "Remove me" should not be visible
     And the todo "Keep me" should be visible
+
+  @regression @req:REQ-TODO-005
+  Scenario: Rename a todo, and abandon a rename
+    Given I have added the todo "Draft the memo"
+    When I rename the todo "Draft the memo" to "Send the memo"
+    Then the todo "Send the memo" should be visible
+    And the todo "Draft the memo" should not be visible
+    When I start renaming the todo "Send the memo" to "Discarded" and press escape
+    Then the todo "Send the memo" should be visible
+    And the todo "Discarded" should not be visible

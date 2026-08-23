@@ -64,3 +64,16 @@ Then('I should be signed in', async ({ loginPage }) => {
 Then('I should not be signed in', async ({ loginPage }) => {
   await loginPage.expectStillOnSignIn();
 });
+
+When('I sign out', async ({ loginPage }) => {
+  // Safe to run in the shared lane, and that is a MEASURED claim rather than an
+  // assumption: this application's sign-out is client-side, so it clears the browser
+  // session without revoking the token server-side. See tests/api/session.api.spec.ts,
+  // which pins that behaviour, and skills/core/auth.md §7 for when it is NOT safe.
+  await loginPage.signOut(account().username);
+});
+
+Then('returning to the workspace should land on the sign-in form', async ({ page, loginPage }) => {
+  await page.goto('/');
+  await loginPage.expectSignedOut();
+});
