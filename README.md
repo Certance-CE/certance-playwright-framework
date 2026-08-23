@@ -4,25 +4,38 @@
 
 `npm test` is green on a fresh clone, and it is not green against a toy. The suite
 starts a real open-source application, provisions an account over its API, signs in
-through the UI, and runs **42 tests across four lanes** — application UI, HTTP API,
-API contract, and the framework's own self-tests. No credentials, no hosted service,
-nothing that can be blocked by someone else's rate limiter.
+through the UI, and runs **42 tests across four lanes** — the application's UI, its
+HTTP API, a second application for portability, and the framework's own self-tests.
+No credentials, no hosted service, nothing that can be blocked by someone else's
+rate limiter.
 
 Then point `BASE_URL` at your own application and replace two directories.
 
 ### Claims, and the command that checks each one
 
-Everything below is verifiable in under a minute on your own machine. That is the
-point of listing it this way.
+Everything below is verifiable on your own machine, and the command is written so that
+running it produces the claim.
 
-| Claim                                                                                  | Check it                                     |
-| -------------------------------------------------------------------------------------- | -------------------------------------------- |
-| 9 of the 12 rules are enforced by lint, not by a style guide                           | `npm run lint`                               |
-| The lint rules are themselves unit-tested, so a rule that stops firing fails the build | `npm run test:unit`                          |
-| Every catalogued requirement is traced to a passing test — 24/24                       | `npm run coverage:requirements`              |
-| Contract checks run against what the live API actually sends                           | `npm run test:api`                           |
-| A test that fails and then passes on retry **fails the build**                         | `failOnFlakyTests` in `playwright.config.ts` |
-| Mutation testing gates the framework's own logic at 70%                                | `npm run test:mutation`                      |
+After `npm install`, these four need nothing further:
+
+| Claim                                                                               | Check it                                     |
+| ----------------------------------------------------------------------------------- | -------------------------------------------- |
+| 9 of the 12 rules are enforced by lint — each run against code that should break it | `npm run test:unit`                          |
+| The gate is real: violations fail the build, warnings included (`--max-warnings=0`) | `npm run lint`                               |
+| Mutation testing gates the framework's own logic at 70%                             | `npm run test:mutation`                      |
+| A test that fails and then passes on retry **fails the build**                      | `failOnFlakyTests` in `playwright.config.ts` |
+
+These two exercise the demo application, so run `npm run setup` first:
+
+| Claim                                                                | Check it                                    |
+| -------------------------------------------------------------------- | ------------------------------------------- |
+| Contract checks run against what the live API actually sends         | `npm run test:api`                          |
+| Every catalogued requirement is traced to a **passing** test — 24/24 | `npm test && npm run coverage:requirements` |
+
+The traceability command reports on the run that just happened, so invoking it alone on
+a fresh clone correctly reports **0/24** — nothing has been proven yet. A matrix that
+counted requirements without a passing test behind them would be worth nothing, which
+is why the run belongs in front of it.
 
 The contract checks found a real inconsistency in the application under test on their
 first live run, and it is pinned by a characterisation test rather than smoothed over.
