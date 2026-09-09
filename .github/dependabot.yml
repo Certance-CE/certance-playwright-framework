@@ -23,6 +23,16 @@ updates:
     ignore:
       - dependency-name: typescript
         update-types: ['version-update:semver-major']
+      # Hold Vitest on the 4.x line. Verified 2026-09-09: vitest 5 passes the unit
+      # tests but collapses the mutation score 91% -> 4%, because the latest
+      # @stryker-mutator/vitest-runner (10, peers vitest >=2.0.0) cannot do
+      # per-test coverage analysis under vitest 5, so the `Unit + mutation` gate
+      # goes red. This is an upstream tooling gap, not our config. Remove both
+      # entries once @stryker-mutator/vitest-runner ships real vitest-5 support.
+      - dependency-name: vitest
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vitest/*'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
