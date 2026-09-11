@@ -1,6 +1,8 @@
 # Performance Budgets (Core Web Vitals + engine metrics)
 
-> Status: **Implemented** — the `perf` fixture (`fixtures/perf.fixture.ts`).
+> Status: **Scaffolding, no caller yet.** The `perf` fixture
+> (`fixtures/perf.fixture.ts`) ships, but no test exercises it and there is no
+> `test:perf` script. Wire it into your own suite to use it.
 
 Load this guide when: adding performance budgets, measuring Core Web Vitals, or
 gating CI on a page-speed regression.
