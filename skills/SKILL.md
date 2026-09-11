@@ -59,15 +59,15 @@ generated, reviewed, or modified in a Certance Lens project.
 > | --------------------------------- | --------------------------------------------------------------------------------- |
 > | 1 · Locator hierarchy             | **lint** — `.locator()`, `page.$`/`$$`, and text locators in specs are errors     |
 > | 2 · Page Object Model             | **lint** — direct `page.click/fill/press/...` in a spec or step is an error       |
-> | 3 · Fixtures over beforeEach      | review                                                                            |
-> | 4 · Test independence             | review                                                                            |
+> | 3 · Fixtures over beforeEach      | **lint** — a `beforeEach`/`beforeAll` hook is an error; setup belongs in a fixture                                                                            |
+> | 4 · Test independence             | **lint** — `test.describe.serial` and module-scoped mutable state are errors                                                                            |
 > | 5 · Web-first assertions          | **lint** — `waitForTimeout`, missing `await`, and assertion-free tests are errors |
-> | 6 · Mock external dependencies    | review                                                                            |
-> | 7 · No real PII                   | review                                                                            |
+> | 6 · Mock external dependencies    | **lint** — raw `page.route()` is an error; mock through the `network` fixture                                                                            |
+> | 7 · No real PII                   | **lint** — literal emails and direct `faker` imports are errors                                                                            |
 > | 8 · One scenario per test         | review                                                                            |
 > | 9 · Trace on for new tests        | **config** — `trace: 'retain-on-failure'` in `playwright.config.ts`               |
 > | 10 · Healer owns locator fixes    | process                                                                           |
-> | 11 · Fixtures inject Page Objects | review                                                                            |
+> | 11 · Fixtures inject Page Objects | **lint** — constructing a Page Object with `new` is an error                                                                            |
 > | 12 · Application-agnostic core    | **lint** — `utils/` importing `pages/` or `features/` is an error                 |
 >
 > **Nine of these twelve are enforced by lint.** Which mechanism holds up each rule —
@@ -161,8 +161,8 @@ playwright-cli click e21
 playwright-cli screenshot
 ```
 
-Token cost: ~27,000 tokens per session. Outputs saved to disk —
-agent reads only what it needs.
+Outputs are saved to disk, so the agent reads only what it needs. That is
+materially fewer tokens than streaming the whole accessibility tree inline.
 
 ### Use Playwright MCP when
 
@@ -172,12 +172,17 @@ agent reads only what it needs.
 - Conversational / interactive debugging sessions
 - Persistent browser context across multiple reasoning steps
 
-Token cost: ~114,000 tokens per session. Full accessibility tree
-streamed inline — justified for exploratory and healing workflows.
+The full accessibility tree is streamed inline, which costs more tokens. It is
+justified for exploratory and healing workflows where that context earns its keep.
 
 ---
 
 ## Agent pipeline — Planner → Generator → Healer
+
+> **These are briefs, not a runtime.** The framework ships prompt briefs
+> (`.github/agents/`) that steer Playwright's own agents (`npx playwright init-agents`).
+> It includes no agent runtime, and nothing here writes or heals your tests
+> automatically. What each brief instructs the agent to do:
 
 Initialise agents once per project:
 
@@ -200,16 +205,18 @@ running the Generator. Validate scope, prioritise flows, confirm edge cases.
 **Input:** `plans/*.md` + `SKILL.md` knowledge base  
 **Output:** `tests/*.spec.ts` — runnable Playwright test files  
 **When to run:** After the plan has been reviewed and approved  
-**Key behaviour:** Verifies selectors live against the DOM as it writes.
-Will not generate brittle selectors — it finds stable alternatives.
+**What the brief instructs:** verify selectors against the live DOM as it
+writes, and choose a stable locator over a brittle one.
 
 ### Healer agent
 
 **Input:** Failing test suite + accessibility tree snapshots + console logs  
 **Output:** Patched locators or `test.fixme()` annotations  
 **When to run:** After any UI change that breaks existing tests  
-**Key behaviour:** Distinguishes broken locators (fixes them) from genuine
-application regressions (marks `fixme`, does not mask the bug).
+**What the brief instructs:** distinguish a broken locator (replace it with an
+equal-or-stronger one) from a real regression (surface it, never silence it).
+Enforcing that automatically is a governance gate the public framework does not
+yet ship, so today it rests on the human review step above.
 
 ---
 

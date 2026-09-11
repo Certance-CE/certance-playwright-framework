@@ -1,7 +1,8 @@
 # Visual Regression Testing
 
-> Status: **Implemented** — `expect(page).toHaveScreenshot()` with defaults in
-> `playwright.config.ts` (`expect.toHaveScreenshot`) + `stabilize()` in `utils/visual.ts`.
+> Status: **Scaffolding, no caller yet.** `toHaveScreenshot` defaults in
+> `playwright.config.ts` and `stabilize()` in `utils/visual.ts` ship, but no test
+> exercises them. Add a screenshot assertion in your own suite to use it.
 
 Load this guide when: adding visual screenshot comparison to the suite.
 
