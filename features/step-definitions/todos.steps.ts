@@ -31,6 +31,10 @@ Then('the todo {string} should be visible', async ({ todoPage }, text: string) =
   await todoPage.expectVisible(text);
 });
 
+When('I mark all todos complete', async ({ todoPage }) => {
+  await todoPage.markAllComplete();
+});
+
 Then('the todo {string} should not be visible', async ({ todoPage }, text: string) => {
   await todoPage.expectNotVisible(text);
 });
