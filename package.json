@@ -54,6 +54,7 @@
     "bdd:smoke": "npm run bdd:gen && playwright test --project=bdd:chromium --grep @smoke",
     "bdd:regression": "npm run bdd:gen && playwright test --project=bdd:chromium --grep-invert @wip",
     "coverage:requirements": "node scripts/requirements-coverage.js",
+    "agents:sync": "node scripts/agents-sync.js",
     "perf:summary": "node scripts/perf-summary.js",
     "ctrf:summary": "node scripts/ctrf-summary.js",
     "pretest": "node scripts/preflight.js"
