@@ -55,3 +55,12 @@ commit and is discarded on escape.
 Both paths are asserted: Enter commits, Escape discards. A rename that cannot be
 abandoned is as broken as one that cannot be saved, and only one of the two is
 usually tested.
+
+## REQ-TODO-006 — All todos can be completed at once
+
+**Priority:** normal
+
+The "Mark all as complete" toggle completes every todo in the list in a single
+action, so a user closing out a finished list does not have to tick each item.
+
+- Covered by: `features/todos.feature` → _Complete all todos at once_
