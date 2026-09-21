@@ -47,8 +47,9 @@ npx @playwright/cli@$(node -p "require('./node_modules/@playwright/test/package.
   open https://staging.your-app.com
 ```
 
-CLI outputs each action to stdout — the agent reads only the relevant parts,
-keeping token consumption to ~27,000 tokens per session vs. ~114,000 for MCP.
+CLI outputs each action to stdout, so the agent reads only the relevant parts
+and consumes materially fewer tokens than a full MCP session, which streams the
+whole accessibility tree inline.
 
 ---
 

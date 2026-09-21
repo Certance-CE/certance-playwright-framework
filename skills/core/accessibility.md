@@ -1,6 +1,9 @@
 # Accessibility Testing
 
-> Status: **Implemented** — `fixtures/a11y.fixture.ts` (`@axe-core/playwright`).
+> Status: **Fixture provided, self-tested against a stub.** `fixtures/a11y.fixture.ts`
+> (`@axe-core/playwright`) ships and is exercised in `framework-tests/foundation.spec.ts`
+> against hand-written HTML. It is not yet run against the reference application; wire
+> `checkA11y` into your own scenarios to use it.
 
 Load this guide when: adding WCAG compliance checks to the suite.
 
@@ -26,26 +29,11 @@ runnable offline example.
 
 ---
 
-## Recommended tool: axe-core via @axe-core/playwright
+## Under the hood
 
-```bash
-npm install --save-dev @axe-core/playwright
-```
-
-```typescript
-import { injectAxe, checkA11y } from 'axe-playwright';
-
-test('dashboard has no accessibility violations', async ({ page }) => {
-  await page.goto('/dashboard');
-  await injectAxe(page);
-  await checkA11y(page, undefined, {
-    runOnly: {
-      type: 'tag',
-      values: ['wcag2a', 'wcag2aa'],
-    },
-  });
-});
-```
+The `checkA11y` fixture wraps [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-npm),
+which is already a dev dependency, so there is nothing to install. Use the fixture shown
+above rather than importing axe directly, so every scan reports to Allure the same way.
 
 ---
 
@@ -59,9 +47,8 @@ Scenario: Dashboard meets WCAG AA
 ```
 
 ```typescript
-Then('the page should have no WCAG AA violations', async ({ page }) => {
-  await injectAxe(page);
-  await checkA11y(page, undefined, { runOnly: { type: 'tag', values: ['wcag2aa'] } });
+Then('the page should have no WCAG AA violations', async ({ checkA11y }) => {
+  await checkA11y({ tags: ['wcag2aa'] });
 });
 ```
 
