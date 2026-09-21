@@ -31,6 +31,9 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run check:docs
+      # Regenerate the native Playwright agents and fail if the committed copies
+      # have drifted from upstream — the fork can never silently lose the grounding loop.
+      - run: npm run agents:sync
 
   # Unit tests + mutation testing over the framework's own logic (no browser, no secrets),
   # plus the SonarQube scan, which reuses the coverage this job already produces.
@@ -50,6 +53,13 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      # Governed Loop gate: fail if this PR mutes a test (skip / fixme / .only) in a test
+      # lane without a recorded reason. Runs here for the full history (fetch-depth: 0) the
+      # job already checks out. A genuine skip passes with an inline `governed-skip:` note.
+      - name: Governed-skip gate
+        env:
+          GOVERNED_SKIP_BASE: ${{ github.event.pull_request.base.sha }}
+        run: npm run gate:skips
       - run: npm run test:unit
       - run: npm run test:mutation
 
