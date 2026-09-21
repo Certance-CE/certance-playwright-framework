@@ -50,6 +50,13 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      # Governed Loop gate: fail if this PR mutes a test (skip / fixme / .only) in a test
+      # lane without a recorded reason. Runs here for the full history (fetch-depth: 0) the
+      # job already checks out. A genuine skip passes with an inline `governed-skip:` note.
+      - name: Governed-skip gate
+        env:
+          GOVERNED_SKIP_BASE: ${{ github.event.pull_request.base.sha }}
+        run: npm run gate:skips
       - run: npm run test:unit
       - run: npm run test:mutation
 
