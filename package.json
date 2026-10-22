@@ -33,6 +33,7 @@
     "prepare": "git config core.hooksPath .githooks || true",
     "setup": "npm run setup:app && playwright install chromium",
     "setup:app": "node scripts/fetch-app.js",
+    "init": "node scripts/init.js",
     "setup:hooks": "git config core.hooksPath .githooks",
     "test": "npm run bdd:gen && playwright test",
     "test:headed": "npm run bdd:gen && playwright test --headed",
@@ -99,5 +100,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "certance": {
+    "seedProject": "bdd:chromium"
   }
 }
