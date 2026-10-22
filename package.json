@@ -31,7 +31,8 @@
   },
   "scripts": {
     "prepare": "git config core.hooksPath .githooks || true",
-    "setup": "node scripts/fetch-app.js && playwright install chromium",
+    "setup": "npm run setup:app && playwright install chromium",
+    "setup:app": "node scripts/fetch-app.js",
     "setup:hooks": "git config core.hooksPath .githooks",
     "test": "npm run bdd:gen && playwright test",
     "test:headed": "npm run bdd:gen && playwright test --headed",

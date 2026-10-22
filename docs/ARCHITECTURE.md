@@ -27,7 +27,7 @@ Core design values:
 | **Isolation**       | Every test is fully independent; any auth state is injected, never built inside a test   | **Single Responsibility** — one scenario per test       |
 | **Speed**           | Parallel execution by default; CI sharding via the `blob` reporter                       | **Dependency Inversion** — injected fixtures            |
 | **Maintainability** | Page Objects own all selectors; actions, not raw locators, are exposed to specs          | **Open/Closed Principle** — extend without modification |
-| **Portability**     | No hard-coded URLs or app-specific config outside `playwright.config.ts` and `.env`      | **Interface Segregation** — app-specific abstractions   |
+| **Portability**     | No hard-coded URLs or app-specific config outside `app.config.ts` and `.env`             | **Interface Segregation** — app-specific abstractions   |
 
 ---
 
@@ -76,7 +76,8 @@ Core design values:
 ├─────────────────────────────────────────────────────────────────────┤
 │                     CONFIGURATION LAYER                             │
 │                                                                     │
-│  playwright.config.ts  — single source of truth for all settings   │
+│  playwright.config.ts  — the core: reporters, timeouts, flake policy │
+│  app.config.ts         — the target: URL, app start-up, its lanes   │
 │  .env                  — optional per-environment overrides (local) │
 │  .env.example          — committed template; no secrets             │
 │  tsconfig.json         — strict TypeScript                          │
@@ -177,11 +178,14 @@ test('adds a todo', async ({ page }) => {
 
 ### 3.6 Configuration layer
 
-`playwright.config.ts` is the only place that defines the base URL, projects,
-timeouts, and reporters. Two projects are defined: `bdd:chromium` (the generated
-Gherkin specs) and `chromium` (direct spec files under `tests/`). Environment
-overrides live in an optional local `.env`; `.env.example` is committed and kept
-up to date. The public reference example carries no secrets.
+Configuration is split in two, so retargeting never touches the core.
+`playwright.config.ts` is the core: timeouts, retries, the flake policy, reporters and
+the `chromium` project that runs the framework's own self-tests. `app.config.ts` is
+the target: the base URL, how the application starts, and the lanes that run against
+it (`setup`, `bdd:app`, `bdd:app-anon`, `api`, and the TodoMVC lane `bdd:chromium`).
+`scripts/demo-layer.json` lists every file that belongs to the reference target.
+Environment overrides live in an optional local `.env`; `.env.example` is committed
+and kept up to date. The public reference example carries no secrets.
 
 ---
 
@@ -197,7 +201,7 @@ portability lane. To point Lens at your own application, change only these artef
 | `.env` / `.env.example`      | yes         | any per-environment overrides; document new vars         |
 | `pages/`                     | yes         | new Page Objects for your app                            |
 | `features/`                  | yes         | new Gherkin scenarios + step definitions                 |
-| `playwright.config.ts`       | optional    | wire `storageState` if your app needs login (see below)  |
+| `app.config.ts`              | yes         | your lanes; wire `storageState` if your app needs login  |
 | `fixtures/`, `utils/`        | usually not | generic helpers reused as-is                             |
 | `skills/core/`, `skills/ci/` | never       | shared knowledge base, never edited per-app              |
 
@@ -257,7 +261,7 @@ A fresh clone still runs green with no credentials from you: the account is crea
 per run against a local instance. The older pattern below remains valid for an app
 where you supply an existing account — capture storage state once and set
 `storageState: 'test-data/.auth/user.json'` on the relevant project in
-`playwright.config.ts`; every scenario then starts
+`app.config.ts`; every scenario then starts
 authenticated and skips the login UI. Full guidance, including CI-safe injection,
 is in `skills/core/auth.md`.
 

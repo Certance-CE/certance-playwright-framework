@@ -29,7 +29,7 @@ The following are **never** application-specific:
 
 - `skills/core/`, `skills/ci/`, `skills/pom/`, `skills/migration/`
 - `fixtures/index.ts` structure (only content changes)
-- `playwright.config.ts` structure (only env var names)
+- `playwright.config.ts` (the core; the target lives in `app.config.ts`)
 - `.github/workflows/` (only env/config values change)
 
 ---
