@@ -50,3 +50,9 @@ The healer may replace a locator that drifted with an equal-or-stronger one, but
 **never weaken, skip, or `fixme` a test to make it pass** — a real regression is
 surfaced as a finding, not silenced. That discipline is the point of the framework, and
 what it is sold on.
+
+CI enforces it (`npm run gate:skips`, ADR-009). A diff that adds a `skip`/`fixme`/`.only`,
+removes an `expect(`, or changes what an `expect(` asserts fails unless a human wrote the
+reason into it: `// governed-skip: …` on a mute, `// governed-change: …` on an assertion
+change. An agent must not write those notes itself. Surface the finding and let the human
+decide.
