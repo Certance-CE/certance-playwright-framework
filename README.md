@@ -24,6 +24,7 @@ The framework's whole argument is evidence over green, so this README holds itse
 | Nine of the twelve rules fail the build, not the review | `npm run lint` |
 | Each of those rules is unit-tested against code that breaks it, so a rule that quietly stops firing fails the build | `npm run test:unit` |
 | The framework's own pure logic survives mutation testing at 70 percent | `npm run test:mutation` |
+| An agent cannot mute a test, delete an assertion or change an expected value without a written reason: CI fails the pull request | `npx vitest run unit/governed-skip.unit.test.ts` |
 
 **After `npm run setup`** (starts a real application locally):
 
