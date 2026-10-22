@@ -44,6 +44,10 @@ export class TodoPage extends BasePage {
     await this.page.getByRole('button', { name: 'Clear completed' }).click();
   }
 
+  async markAllComplete() {
+    await this.page.getByLabel('Mark all as complete').click();
+  }
+
   /**
    * Rename a todo. TodoMVC reveals an edit field on double-click; the field carries
    * an accessible name of its own, so no CSS is needed to reach it.
