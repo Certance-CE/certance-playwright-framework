@@ -81,9 +81,8 @@ fixture strings.
 
 **Negative / trade-offs:**
 
-- This slice covers `skip`/`fixme`/`.only` only. The other forbidden healer actions —
-  removing an assertion, changing an asserted value — are not yet caught (fixed waits are
-  already caught by lint). Those are a follow-on extension of the same gate.
+- Every forbidden healer action is now caught by a machine: mutes and focus here, removed and
+  changed assertions by the 2026-10 extension below, fixed waits by lint.
 - The pattern match is textual: a `.skip(` inside a string literal in a guarded file would
   need a waiver. Acceptable for a floor; rare in practice.
 
@@ -94,7 +93,34 @@ fixture strings.
 
 ---
 
+## Extension — assertion integrity (2026-10-22)
+
+The same script and CI step now also fail a diff that weakens a test without muting it,
+across the test lanes **and `pages/`** (Page Object assertions are where most of this suite's
+checks live):
+
+- **An assertion removed.** More `expect(` lines deleted than added, counted across the whole
+  diff, so moving an assertion from a step definition into a Page Object nets to zero.
+  Commenting one out counts as removing it, and so does deleting a spec file. The removed line
+  cannot carry a note, so the reason is a `governed-change:` note added anywhere in the diff.
+- **An asserted value changed.** An `expect(x)` line replaced by one on the same subject that
+  claims something different: `toHaveCount(2)` → `toHaveCount(3)`, or `toBeVisible()` →
+  `not.toBeVisible()`. The reason goes inline on the new line, as with a skip.
+
+Proven: 10 more cases in `unit/governed-skip.unit.test.ts` (16 in all), including the false
+positives that would get the gate disabled: a move into a Page Object, a re-indent, and changes
+under `unit/` all pass. Replayed over all 40 commits in the repository's history, it flagged
+none of them.
+
+The trade-off is deliberate. A strengthened assertion on the same subject (`toBeVisible()` →
+`toHaveText('Saved')`) also needs a one-line reason. That costs one comment; letting a
+weakened one through costs a defect in production. Multi-line matchers are counted by their
+`expect(` line only, so a value changed on a continuation line is not seen. This is a floor,
+not a proof.
+
+---
+
 ## Review date
 
-Revisit when extending the gate to assertion-removal / value-change (completing GATE 2), or if
-the textual match produces false positives often enough to warrant an AST-based check.
+Revisit if the textual match produces false positives often enough to warrant an AST-based
+check, or when the healer gains authority to edit Page Objects unreviewed.
