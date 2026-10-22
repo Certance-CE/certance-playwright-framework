@@ -22,5 +22,6 @@
     "scripts/fetch-app.js",
     ".bin/"
   ],
-  "replace": ["app.config.ts", "fixtures/pages.fixture.ts"]
+  "replace": ["app.config.ts", "fixtures/pages.fixture.ts"],
+  "scripts": ["test:api"]
 }

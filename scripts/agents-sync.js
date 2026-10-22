@@ -27,8 +27,12 @@ const OWNED = [
   'specs/README.md',
 ];
 
+// The lane init-agents seeds from. It must exist or init-agents crashes, so it is read
+// from package.json, which `npm run init` points at the new target's lane.
+const seed = (require('../package.json').certance || {}).seedProject || 'bdd:chromium';
+
 try {
-  execFileSync('npx', ['playwright', 'init-agents', '--loop=claude', '--project=bdd:chromium'], { stdio: 'inherit' });
+  execFileSync('npx', ['playwright', 'init-agents', '--loop=claude', `--project=${seed}`], { stdio: 'inherit' });
 } catch (e) {
   console.error(`\nagents:sync: could not regenerate agents (${e.message}).`);
   process.exit(2);

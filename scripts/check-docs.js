@@ -48,6 +48,7 @@ const ILLUSTRATIVE = [
 const EXPECTED_ABSENT = new Set([
   '.env', // created by the reader from .env.example
   'test-data/.auth/user.json', // produced by the auth seed
+  'requirements/SMOKE.md', // written by `npm run init`
 ]);
 
 /**
@@ -76,11 +77,11 @@ const isGenerated = (p) => GENERATED_DIRS.some((d) => p.startsWith(d));
  * once `npm run init` has replaced it with your application, those citations describe the
  * reference implementation rather than claim this repository still holds it.
  */
-const DEMO_LAYER = (() => {
+const { remove: DEMO_LAYER = [], scripts: DEMO_SCRIPTS = [] } = (() => {
   try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, 'demo-layer.json'), 'utf8')).remove;
+    return JSON.parse(fs.readFileSync(path.join(__dirname, 'demo-layer.json'), 'utf8'));
   } catch {
-    return [];
+    return {};
   }
 })();
 
@@ -97,7 +98,8 @@ function markdownFiles() {
     .execSync('git ls-files "*.md"', { cwd: ROOT, encoding: 'utf8' })
     .split('\n')
     .filter(Boolean)
-    .map((f) => path.join(ROOT, f));
+    .map((f) => path.join(ROOT, f))
+    .filter((f) => fs.existsSync(f)); // tracked but deleted in the working tree (e.g. by init)
 }
 
 /** Strip fenced code blocks so example snippets do not produce false positives. */
@@ -121,7 +123,7 @@ for (const file of markdownFiles()) {
 
   // ── 1. npm run <script> ───────────────────────────────────────────────────
   for (const m of text.matchAll(/`npm run ([a-z0-9:_-]+)`/gi)) {
-    if (!scripts.has(m[1])) {
+    if (!scripts.has(m[1]) && !DEMO_SCRIPTS.includes(m[1])) {
       problems.push(`${rel}:${lineOf(text, m.index)} — npm run ${m[1]} is not a script in package.json`);
     }
   }
