@@ -173,7 +173,7 @@ The core is application-agnostic by design (see [ADR-003](./docs/decisions/ADR-0
 1. Set `BASE_URL` in `.env` to your app's origin.
 2. Write Page Objects in `pages/` and register them in `fixtures/pages.fixture.ts`.
 3. Write `.feature` files and step definitions in `features/`.
-4. If your app needs a login, capture a `storageState` once and wire it into the bdd project in `playwright.config.ts`. See [`skills/core/auth.md`](./skills/core/auth.md).
+4. If your app needs a login, capture a `storageState` once and wire it into the bdd project in `app.config.ts`. See [`skills/core/auth.md`](./skills/core/auth.md).
 
 `features/auth.feature` with `LoginPage` and `tests/auth.setup.ts` is the example to model an authenticated app on. `TodoPage` with `features/todos.feature` is the minimal one.
 

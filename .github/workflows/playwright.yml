@@ -96,26 +96,17 @@ jobs:
       - run: npm ci
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
-      - name: Fetch the demo application
-        run: node scripts/fetch-app.js
+      # Whatever the target needs before a run (the demo: fetch its binary). Defined by the
+      # target layer, so retargeting the framework never means editing this workflow.
+      - name: Prepare the application under test
+        run: npm run setup:app
 
-      - name: Generate BDD specs
-        run: npm run bdd:gen
-
-      # The showcase: Playwright starts the application, provisions an account, signs in
-      # and runs the suite, then stops it. No hosted dependency, so no third party can
-      # decide this build looks like a bot.
-      - name: Run BDD showcase (self-hosted app)
-        run: npx playwright test --project=setup --project=bdd:app --project=bdd:app-anon
-
-      # The API lane: the same application over HTTP, no browser. Seconds, not minutes.
-      - name: Run API lane
-        run: npx playwright test --project=api
-
-      # The portability lane: a different application, proving the framework is not
-      # welded to one target.
-      - name: Run BDD suite (TodoMVC)
-        run: npx playwright test --project=bdd:chromium
+      # Every lane in one run, in the order app.config.ts declares: Playwright starts the
+      # application, provisions an account, signs in, runs the UI, API and portability
+      # lanes plus the framework self-tests, then stops it. No hosted dependency, so no
+      # third party can decide this build looks like a bot.
+      - name: Run the suite
+        run: npm test
       # Render the run as GitHub job summaries. Both scripts are dependency-free and
       # never fail the build: a reporting layer must not be able to turn a green
       # suite red. Without these steps the CTRF reporter and the requirement
