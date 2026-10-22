@@ -52,6 +52,8 @@ Node 22 or newer (`.nvmrc` pins what `nvm` picks). No accounts, no API keys, not
 
 **What `npm test` actually runs.** Playwright starts a real open-source application on your machine, registers an account through its API, signs in through the real login form, and tests it end to end, browser and API. A second public application (TodoMVC) runs a few of the same scenarios to show the framework is not welded to one product. Running the app locally is deliberate: the suite works offline, works behind a corporate proxy, and cannot break because a hosted demo changed or decided your CI looks like a bot.
 
+**See the loop end to end:** [docs/demo/spec-to-green.md](docs/demo/spec-to-green.md) walks a plain-language requirement through to a passing, honestly-traced test in six steps — the spec-driven, low-code, AI-assisted flow on a real application.
+
 ---
 
 ## Point it at your application

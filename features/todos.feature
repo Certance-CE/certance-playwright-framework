@@ -49,3 +49,11 @@ Feature: Todo list
     When I start renaming the todo "Send the memo" to "Discarded" and press escape
     Then the todo "Send the memo" should be visible
     And the todo "Discarded" should not be visible
+
+  @regression @req:REQ-TODO-006
+  Scenario: Complete all todos at once
+    Given I have added the todo "Wash the car"
+    And I have added the todo "Walk the dog"
+    When I mark all todos complete
+    Then the todo "Wash the car" should be completed
+    And the todo "Walk the dog" should be completed
