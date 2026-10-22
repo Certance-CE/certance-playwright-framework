@@ -14,9 +14,13 @@ import { ESLint } from 'eslint';
  */
 let eslint: ESLint;
 
-beforeAll(() => {
+// The first lintText() loads the whole flat config and every plugin: measured at 9s on
+// a loaded machine, past vitest's 5s per-test default. Pay that once here, under an
+// explicit budget, so no rule test fails for a reason that has nothing to do with the rule.
+beforeAll(async () => {
   eslint = new ESLint();
-});
+  await eslint.lintText('', { filePath: SPEC });
+}, 60_000);
 
 async function lint(code: string, filePath: string) {
   const [result] = await eslint.lintText(code, { filePath, warnIgnored: false });

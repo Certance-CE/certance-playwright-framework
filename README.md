@@ -24,6 +24,7 @@ The framework's whole argument is evidence over green, so this README holds itse
 | Nine of the twelve rules fail the build, not the review | `npm run lint` |
 | Each of those rules is unit-tested against code that breaks it, so a rule that quietly stops firing fails the build | `npm run test:unit` |
 | The framework's own pure logic survives mutation testing at 70 percent | `npm run test:mutation` |
+| An agent cannot mute a test, delete an assertion or change an expected value without a written reason: CI fails the pull request | `npx vitest run unit/governed-skip.unit.test.ts` |
 
 **After `npm run setup`** (starts a real application locally):
 
@@ -173,7 +174,7 @@ The core is application-agnostic by design (see [ADR-003](./docs/decisions/ADR-0
 1. Set `BASE_URL` in `.env` to your app's origin.
 2. Write Page Objects in `pages/` and register them in `fixtures/pages.fixture.ts`.
 3. Write `.feature` files and step definitions in `features/`.
-4. If your app needs a login, capture a `storageState` once and wire it into the bdd project in `playwright.config.ts`. See [`skills/core/auth.md`](./skills/core/auth.md).
+4. If your app needs a login, capture a `storageState` once and wire it into the bdd project in `app.config.ts`. See [`skills/core/auth.md`](./skills/core/auth.md).
 
 `features/auth.feature` with `LoginPage` and `tests/auth.setup.ts` is the example to model an authenticated app on. `TodoPage` with `features/todos.feature` is the minimal one.
 

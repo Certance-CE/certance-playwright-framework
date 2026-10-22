@@ -59,11 +59,11 @@ Set the API base URL to the origin, pass full paths, and assert the response sha
 
 ## 2. Injecting auth state into all tests
 
-Auth state is injected at the project level in `playwright.config.ts`, not
+Auth state is injected at the project level in `app.config.ts`, not
 inside individual tests:
 
 ```typescript
-// playwright.config.ts
+// app.config.ts (inside target().projects)
 {
   name: 'bdd:chromium',
   testDir: bddOutputDir,
@@ -102,7 +102,7 @@ test-data/
     └── viewer.json   read-only role
 ```
 
-Add separate BDD projects in `playwright.config.ts`:
+Add separate BDD projects in `app.config.ts`:
 
 ```typescript
 { name: 'bdd:admin',  testDir: bddOutputDir, use: { storageState: 'test-data/.auth/admin.json' } },
@@ -123,7 +123,7 @@ UI itself, so they cannot start from a signed-in session.
 injects one:
 
 ```typescript
-// playwright.config.ts
+// app.config.ts (inside target().projects)
 {
   name: 'bdd:app',                 // signed in
   grep: /@app/,
@@ -261,7 +261,7 @@ the shared login. A robust pattern to add for your own app:
 
 1. **Tag** the scenario `@destructive` in its `.feature` file.
 2. Give the shared bdd project `grepInvert: /@destructive/` in
-   `playwright.config.ts`, so it can _never_ run a destructive scenario — no matter
+   `app.config.ts`, so it can _never_ run a destructive scenario — no matter
    what `--grep` a CI job or developer passes.
 3. Add a second project (e.g. `bdd:destructive`) with `grep: /@destructive/` and
    its **own throwaway `storageState`** seeded from a _disposable_ account. Logging

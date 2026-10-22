@@ -1,0 +1,26 @@
+{
+  "$comment": "The reference target: every file that exists only because this repository demonstrates itself against Vikunja and TodoMVC. `npm run init` removes these and scaffolds your application in their place; everything not listed is the framework core and stays. scripts/check-docs.js treats a listed path as illustrative once it is gone, so the guides that cite the reference example keep passing after init.",
+  "remove": [
+    "pages/LoginPage.ts",
+    "pages/ProjectPage.ts",
+    "pages/TodoPage.ts",
+    "pages/UpcomingPage.ts",
+    "features/auth.feature",
+    "features/tasks.feature",
+    "features/todos.feature",
+    "features/step-definitions/auth.steps.ts",
+    "features/step-definitions/tasks.steps.ts",
+    "features/step-definitions/todos.steps.ts",
+    "features/step-definitions/support/",
+    "tests/auth.setup.ts",
+    "tests/api/",
+    "requirements/API.md",
+    "requirements/AUTH.md",
+    "requirements/TASKS.md",
+    "requirements/TODOS.md",
+    "docs/demo/",
+    "scripts/fetch-app.js",
+    ".bin/"
+  ],
+  "replace": ["app.config.ts", "fixtures/pages.fixture.ts"]
+}

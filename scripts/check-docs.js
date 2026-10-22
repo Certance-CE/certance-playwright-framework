@@ -71,7 +71,22 @@ const GENERATED_DIRS = [
 
 const isGenerated = (p) => GENERATED_DIRS.some((d) => p.startsWith(d));
 
-const isIllustrative = (p) => ILLUSTRATIVE.some((i) => (i.endsWith('/') ? p.startsWith(i) : p === i));
+/**
+ * The reference target (scripts/demo-layer.json). Guides cite it as the worked example;
+ * once `npm run init` has replaced it with your application, those citations describe the
+ * reference implementation rather than claim this repository still holds it.
+ */
+const DEMO_LAYER = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, 'demo-layer.json'), 'utf8')).remove;
+  } catch {
+    return [];
+  }
+})();
+
+const matches = (list, p) => list.some((i) => (i.endsWith('/') ? p.startsWith(i) : p === i));
+const isIllustrative = (p) =>
+  matches(ILLUSTRATIVE, p) || (matches(DEMO_LAYER, p) && !fs.existsSync(path.join(ROOT, p)));
 
 /**
  * Only tracked files. Walking the filesystem would pick up generated reports and other
