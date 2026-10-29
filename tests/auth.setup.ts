@@ -1,4 +1,5 @@
 import { test as setup, request } from '@playwright/test';
+import { epic } from 'allure-js-commons';
 import fs from 'node:fs';
 import path from 'node:path';
 import { LoginPage } from '../pages/LoginPage';
@@ -15,6 +16,9 @@ const AUTH_FILE = path.join(__dirname, '../test-data/.auth/user.json');
 const ACCOUNT_FILE = path.join(__dirname, '../test-data/.auth/account.json');
 
 setup('authenticate', async ({ page }) => {
+  // This file uses Playwright's own `test`, so the labelling fixture does not run: say where
+  // it belongs in the report here.
+  await epic('Session setup');
   const api = await request.newContext({ baseURL: process.env.APP_API_URL });
   const account = await registerAccount(api, `setup${Date.now()}`);
   await api.dispose();

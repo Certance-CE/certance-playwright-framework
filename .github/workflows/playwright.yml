@@ -129,6 +129,39 @@ jobs:
         if: always()
         run: npm run coverage:requirements
 
+      # The customer-facing report: one HTML file with the results by business area, every
+      # failure's trace, the traceability matrix, the performance table and the trend.
+      # History rides in the Actions cache: a branch continues its own, a new branch
+      # starts from main's.
+      - name: Restore report history
+        if: always()
+        uses: actions/cache/restore@v6
+        with:
+          path: allure-history
+          key: allure-history-${{ github.head_ref || github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            allure-history-${{ github.head_ref || github.ref_name }}-
+            allure-history-main-
+
+      - name: Build the quality report
+        if: always()
+        run: npm run report
+
+      - name: Save report history
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: allure-history
+          key: allure-history-${{ github.head_ref || github.ref_name }}-${{ github.run_id }}
+
+      - name: Upload quality report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-report
+          path: allure-report/index.html
+          retention-days: 30
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v7

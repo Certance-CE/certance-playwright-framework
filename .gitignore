@@ -41,3 +41,4 @@ stryker.log
 
 # Demo application binary (fetched by npm run setup)
 /.bin/
+/allure-history/

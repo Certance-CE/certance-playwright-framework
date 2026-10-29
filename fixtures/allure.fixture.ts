@@ -30,11 +30,25 @@ const SEVERITY_BY_TAG: Record<string, string> = {
 export const test = pageTest.extend<{ _allureCoverage: void }>({
   _allureCoverage: [
     async ({}, use) => {
-      const tags = test.info().tags.map((t) => t.replace(/^@/, ''));
+      const info = test.info();
+      const tags = info.tags.map((t) => t.replace(/^@/, ''));
+      // The level below the epic is the Gherkin `Feature:` (or the spec's outer describe),
+      // so a reader drills from business area to feature to scenario, not epic to epic.
+      const [, outer] = info.titlePath;
+      const featureName = info.titlePath.length > 2 && outer ? outer : undefined;
+
+      // What is not about the application under test gets a heading of its own, so a
+      // customer reading about their app does not wade through the framework's internals.
+      const own = /(^|\/)framework-tests\//.test(info.file.replace(/\\/g, '/'));
+      if (own || info.project.name === 'setup') {
+        await epic(own ? 'Framework self-checks' : 'Session setup');
+        if (featureName) await feature(featureName);
+      }
+
       for (const t of tags) {
         if (EPIC_BY_TAG[t]) {
           await epic(EPIC_BY_TAG[t]);
-          await feature(EPIC_BY_TAG[t]);
+          await feature(featureName ?? EPIC_BY_TAG[t]);
         }
         if (t.startsWith('journey:')) {
           await label('journey', t.slice('journey:'.length));
@@ -44,6 +58,12 @@ export const test = pageTest.extend<{ _allureCoverage: void }>({
         if (t.startsWith('req:')) {
           await label('requirement', t.slice('req:'.length));
         }
+      }
+      // A test with no area tag still belongs somewhere: under its own feature, rather than
+      // loose at the bottom of the report where nobody reads it.
+      if (!own && info.project.name !== 'setup' && !tags.some((t) => EPIC_BY_TAG[t]) && featureName) {
+        await epic(featureName);
+        await feature(featureName);
       }
       const sev = tags.map((t) => SEVERITY_BY_TAG[t]).find(Boolean);
       if (sev) await severity(sev);

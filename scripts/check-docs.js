@@ -62,6 +62,7 @@ const GENERATED_DIRS = [
   'reports/',
   'allure-results/',
   'allure-report/',
+  'allure-history/', // the report's trend, written by `npm run report`
   'playwright-report/',
   'blob-report/',
   'coverage/',
