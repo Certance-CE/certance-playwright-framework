@@ -58,6 +58,7 @@
     "coverage:requirements": "node scripts/requirements-coverage.js",
     "agents:sync": "node scripts/agents-sync.js",
     "gate:skips": "node scripts/governed-skip-check.js",
+    "test:perf": "npm run bdd:gen && playwright test --grep @perf",
     "perf:summary": "node scripts/perf-summary.js",
     "ctrf:summary": "node scripts/ctrf-summary.js",
     "pretest": "node scripts/preflight.js"
@@ -95,7 +96,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.0",
     "vitest": "^4.1.12",
-    "web-vitals": "^6.2.1",
+    "web-vitals": "^6.2.3",
     "zod": "^4.6.5"
   },
   "engines": {

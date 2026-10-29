@@ -56,8 +56,10 @@ function main() {
   for (const r of records) {
     const m = r.metrics || {};
     const ok = (r.violations || []).length === 0;
-    const status = ok ? '✅ within' : `❌ ${r.violations.map((v) => `${v.metric} ${v.value}>${v.limit}`).join(', ')}`;
-    md += `| ${r.name} | ${fmt(m.lcp && Math.round(m.lcp), 'ms')} | ${fmt(m.cls)} | ${fmt(m.inp && Math.round(m.inp), 'ms')} | ${fmt(m.ttfb && Math.round(m.ttfb), 'ms')} | ${fmt(m.scriptMs, 'ms')} | ${fmt(m.jsHeapMB, 'MB')} | ${status} |\n`;
+    const status = ok
+      ? '✅ within'
+      : `❌ ${r.violations.map((v) => (v.value === null ? `${v.metric} not measured` : `${v.metric} ${v.value}>${v.limit}`)).join(', ')}`;
+    md += `| ${r.name} | ${fmt(m.lcp && Math.round(m.lcp), 'ms')} | ${fmt(typeof m.cls === 'number' ? Math.round(m.cls * 1000) / 1000 : m.cls)} | ${fmt(m.inp && Math.round(m.inp), 'ms')} | ${fmt(m.ttfb && Math.round(m.ttfb), 'ms')} | ${fmt(m.scriptMs, 'ms')} | ${fmt(m.jsHeapMB, 'MB')} | ${status} |\n`;
   }
 
   md += `\n_LCP/CLS/INP = Core Web Vitals · Script/Heap = main-thread engine work (CDP). INP is only measured when a test drives an interaction._\n`;

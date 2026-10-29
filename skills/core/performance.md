@@ -1,8 +1,9 @@
 # Performance Budgets (Core Web Vitals + engine metrics)
 
-> Status: **Scaffolding, no caller yet.** The `perf` fixture
-> (`fixtures/perf.fixture.ts`) ships, but no test exercises it and there is no
-> `test:perf` script. Wire it into your own suite to use it.
+> Status: **Proven against the reference app, in CI.** `features/performance.feature`
+> measures two signed-in journeys of the self-hosted application on every run
+> (REQ-PERF-001/002), `npm run perf:summary` puts the budget table in the CI run summary,
+> and `npm run init` scaffolds a performance scenario for your own landing or sign-in page.
 
 Load this guide when: adding performance budgets, measuring Core Web Vitals, or
 gating CI on a page-speed regression.
@@ -22,6 +23,38 @@ Playwright drives a real Chromium, so the `perf` fixture captures **both** layer
 A **budget** is a set of thresholds; a test fails (soft) if any is exceeded.
 
 ## Usage
+
+### In Gherkin (no code)
+
+Two steps ship in the core (`features/step-definitions/performance.steps.ts`) and survive
+`npm run init`. End any scenario that has just opened a page with one:
+
+```gherkin
+@perf @req:REQ-PERF-001
+Scenario: The overview loads within the Core Web Vitals budget
+  Given I am signed in
+  Then the page meets its performance budget
+
+@perf @req:REQ-PERF-002
+Scenario: The task list loads within our own budget
+  When I open the project
+  Then the page meets this performance budget:
+    | lcp | 1500 |
+    | cls | 0.05 |
+```
+
+A misspelt metric (`lpc`) or a non-numeric limit fails the step with the list of valid
+names. It is never silently ignored.
+
+### When it measures, and what fails
+
+The fixture waits for the page's `load` event and for LCP and FCP to report (bounded at
+10 s), so a page that renders in JavaScript is measured after it paints, not when its DOM
+has merely parsed. A metric the budget names but the page never produced is a
+violation ("lcp not measured"), not a pass. INP is the one exception: a page has none
+until someone interacts with it.
+
+### In a spec
 
 ```typescript
 import { test } from '../fixtures';
@@ -62,17 +95,20 @@ test('LCP stays acceptable when pricing is slow', async ({ page, degrade, perf }
   journey with its vitals, engine time, and budget status.
 
 ```bash
-npm run test:perf       # run tests/performance/*.perf.spec.ts
+npm run test:perf       # every @perf scenario
 npm run perf:summary    # render the dedicated report
 ```
 
-## CI note
+## CI
 
-The harness runs fully offline, so a budget check needs no network of its own.
-**Real budgets need the live app** and journey-specific thresholds — wire a
-`test:perf` step into CI once budgets are tuned, and gate with
-`PERF_FAIL_ON_BUDGET=1`. Raw numbers on a fast CI box read optimistically; for a
-standardized, comparable score apply CPU/network throttling (CDP
+The suite runs every `@perf` scenario with the rest, and a breach fails it. The CI job
+then runs `npm run perf:summary` (report only, so it can never turn a green run red) and
+keeps `performance-report.md` and `perf-results/` as a 30-day artifact.
+
+Read the numbers for what they are: the reference app runs on the same CI runner, with no
+network between browser and server, so its timings are a regression signal, not a
+field measurement. Against a staging environment over a real network they mean more. For
+a standardised score, add CPU or network throttling (CDP
 `Emulation.setCPUThrottlingRate`) or layer Lighthouse on top.
 
 ---

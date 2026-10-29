@@ -8,6 +8,7 @@
     "features/auth.feature",
     "features/tasks.feature",
     "features/todos.feature",
+    "features/performance.feature",
     "features/step-definitions/auth.steps.ts",
     "features/step-definitions/tasks.steps.ts",
     "features/step-definitions/todos.steps.ts",
@@ -18,6 +19,7 @@
     "requirements/AUTH.md",
     "requirements/TASKS.md",
     "requirements/TODOS.md",
+    "requirements/PERF.md",
     "docs/demo/",
     "scripts/fetch-app.js",
     ".bin/"
