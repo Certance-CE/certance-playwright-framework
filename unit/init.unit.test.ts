@@ -170,6 +170,12 @@ describe('npm run init --api — the API lane it writes', () => {
     expect(withApi['requirements/API.md']).toContain('## REQ-API-001 —');
   });
 
+  it('escapes the app name safely in the generated test, backslashes included', async () => {
+    const files = init.scaffold({ url: 'https://a.test', name: "Ops\\Payments 'EU'", title: 'T', api: TEXT_API });
+    expect(spec(files, 'ops-payments-eu')).toContain("test.describe('Ops\\\\Payments \\'EU\\' — API'");
+    expect(await lintErrors(files)).toEqual([]);
+  });
+
   it('writes no API lane when --api is not given', () => {
     expect(Object.keys(withLogin).some((f) => f.startsWith('tests/api/'))).toBe(false);
     expect(withLogin['app.config.ts']).not.toContain("name: 'api'");

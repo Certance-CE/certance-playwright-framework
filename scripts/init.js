@@ -650,7 +650,7 @@ const Response = ${schemaFor(api.json)};
  */
 `
 }
-test.describe('${name.replace(/'/g, "\\'")} — API', () => {
+test.describe(${lit(`${name} — API`)}, () => {
   test(
     ${lit(`${api.path} answers with its contract`)},
     { tag: ['@${area}', '@smoke', '@req:REQ-API-001'] },
