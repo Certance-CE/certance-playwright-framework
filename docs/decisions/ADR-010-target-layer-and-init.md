@@ -126,6 +126,30 @@ never falls back to CSS, ties every scenario to a requirement, and carries the
 
 ---
 
+## Extension — the API lane (2026-10-29)
+
+`init` removed the reference API lane and put nothing in its place, so a customer started
+with no API tests. `--api <url>` now takes a read-only endpoint (a health or info URL),
+sends **one anonymous GET**, and writes an `api` lane, a contract test and
+`requirements/API.md` tagged into the matrix. The rule is the same as for the sign-in
+probe: read, never act. An endpoint that answers 4xx or 5xx is refused with an
+explanation, not guessed at.
+
+The contract holds the **types** the endpoint returned, never its values (a version string
+changes every release), for at most twelve fields, with a comment naming how many were left
+out. Nulls and arrays are `unknown`, because one sample cannot say what they hold later. The
+schema is not `.strict()`: a field the provider adds passes, and a field dropped or retyped
+fails. A non-JSON endpoint gets a status and content-type check.
+
+Proven on two APIs `init` had never seen. A separate local instance of the task app
+(`/api/v1/info`, 22 fields, 12 asserted) ran in one `init` with the sign-in probe, the
+signed-in lane and performance: 25 s from clone to green, 4 of 4 requirements covered, and a
+report titled for the app. Editing the generated schema to simulate the provider retyping one
+field and dropping another failed with both fields named. GitHub's public API root
+(33 fields, 12 asserted) was green.
+
+---
+
 ## Review date
 
 Revisit after the first customer `init`, against what it actually took.

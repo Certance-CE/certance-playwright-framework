@@ -41,6 +41,7 @@ function parseArgs(argv) {
     if (a === '--url') opts.url = next();
     else if (a === '--login') opts.login = argv[i + 1] && !argv[i + 1].startsWith('--') ? next() : '/';
     else if (a === '--name') opts.name = next();
+    else if (a === '--api') opts.api = next();
     else if (a === '--no-run') opts.run = false;
     else if (a === '--force') opts.force = true;
     else if (a === '--help' || a === '-h') opts.help = true;
@@ -175,6 +176,66 @@ async function probe(url, loginPath) {
   }
 }
 
+/**
+ * One anonymous GET of a read-only endpoint: what it answers, so the generated contract
+ * test asserts what the API really returns rather than what someone remembers it returns.
+ */
+async function probeApi(endpoint) {
+  const { request } = require('@playwright/test');
+  const target = new URL(endpoint);
+  const ctx = await request.newContext({ extraHTTPHeaders: { Accept: 'application/json' } });
+  try {
+    const res = await ctx.get(target.href);
+    const status = res.status();
+    if (status >= 400) {
+      throw new Error(
+        `GET ${target.href} answered ${status}. Give --api a read-only endpoint that answers without credentials, such as a health or info endpoint.`,
+      );
+    }
+    const contentType = (res.headers()['content-type'] || '').split(';')[0].trim();
+    let json;
+    if (/json/i.test(contentType)) {
+      try {
+        json = await res.json();
+      } catch {
+        json = undefined; // says JSON, is not: assert the status and type only
+      }
+    }
+    return { origin: target.origin, path: `${target.pathname}${target.search}`, status, contentType, json };
+  } finally {
+    await ctx.dispose();
+  }
+}
+
+const IDENT = /^[A-Za-z_$][\w$]*$/;
+const MAX_FIELDS = 12;
+
+/**
+ * zod source for a JSON value as the API returned it. Types only, never values (a
+ * version string that changes every release must not fail the contract). Nested
+ * objects to two levels; arrays and nulls as unknown, because one sample cannot say
+ * what they hold the rest of the time.
+ */
+function schemaFor(value, depth = 0, indent = '') {
+  if (value === null || value === undefined) return 'z.unknown()';
+  if (Array.isArray(value)) return 'z.array(z.unknown())';
+  if (typeof value === 'string') return 'z.string()';
+  if (typeof value === 'number') return 'z.number()';
+  if (typeof value === 'boolean') return 'z.boolean()';
+  if (typeof value !== 'object') return 'z.unknown()';
+  if (depth >= 2) return 'z.record(z.string(), z.unknown())';
+  const keys = Object.keys(value);
+  if (!keys.length) return 'z.object({})';
+  const inner = `${indent}  `;
+  const lines = keys
+    .slice(0, MAX_FIELDS)
+    .map((k) => `${inner}${IDENT.test(k) ? k : lit(k)}: ${schemaFor(value[k], depth + 1, inner)},`);
+  if (keys.length > MAX_FIELDS) {
+    lines.push(`${inner}// ${keys.length - MAX_FIELDS} more field(s) not asserted: add the ones you rely on.`);
+  }
+  return `z.object({\n${lines.join('\n')}\n${indent}})`;
+}
+
 // ── Scaffold: pure, so it is unit-tested without a browser ──────────────────
 
 const slug = (s) =>
@@ -184,7 +245,7 @@ const slug = (s) =>
     .replace(/^-|-$/g, '') || 'app';
 
 /** The files a target consists of, as { path: contents }. */
-function scaffold({ url, name, title, heading, login }) {
+function scaffold({ url, name, title, heading, login, api }) {
   const area = slug(name);
   const files = {};
   const hasLogin = Boolean(login);
@@ -210,7 +271,14 @@ ${hasLogin ? "\nconst AUTH_FILE = 'test-data/.auth/user.json';\n" : ''}
 /** A function, so the environment is read after .env is loaded, not at import. */
 export function target({ bddDir }: { bddDir: string }): Target {
   // BASE_URL overrides the address init was given: one suite, any environment.
-  const APP = process.env.BASE_URL || ${lit(url)};
+  const APP = process.env.BASE_URL || ${lit(url)};${
+    api
+      ? `
+  // The API the api lane calls. APP_API_URL overrides it; the api fixture reads it from here.
+  const API = process.env.APP_API_URL || ${lit(api.origin)};
+  process.env.APP_API_URL = API;`
+      : ''
+  }
 ${
   hasLogin
     ? `
@@ -253,7 +321,17 @@ ${
               use: { ...devices['Desktop Chrome'], baseURL: APP, storageState: AUTH_FILE },
             },
           ]
-        : []),
+        : []),${
+          api
+            ? `
+      // The API lane: HTTP only, no browser.
+      {
+        name: 'api',
+        testDir: './tests/api',
+        use: { baseURL: API },
+      },`
+            : ''
+        }
     ],
   };
 }
@@ -266,7 +344,17 @@ ${
         name: 'bdd:app',
         testDir: bddDir,
         use: { ...devices['Desktop Chrome'], baseURL: APP },
-      },
+      },${
+        api
+          ? `
+      // The API lane: HTTP only, no browser.
+      {
+        name: 'api',
+        testDir: './tests/api',
+        use: { baseURL: API },
+      },`
+          : ''
+      }
     ],
   };
 }
@@ -538,6 +626,70 @@ application is fully tested: a requirement nobody wrote down cannot show up as m
 Write the untested ones too. A gap with a requirement is a decision; a gap without one
 is an oversight nobody will find.
 `;
+
+  if (api) {
+    const contract = api.json !== undefined;
+    files[`tests/api/${area}.api.spec.ts`] = `import { test, expect } from '../../fixtures';
+${contract ? "import { z } from 'zod';\nimport { expectSchema } from '../../utils/contract';\n" : ''}
+/**
+ * The first API check for ${name}, generated by \`npm run init\` from one live GET of
+ * ${api.path}.
+${
+  contract
+    ? ` *
+ * The schema holds the fields the endpoint returned at that moment, with the types it
+ * returned. It is deliberately not \`.strict()\`: the provider ADDING a field is backwards-
+ * compatible and must not fail, while DROPPING one or changing its type is what breaks a
+ * caller, and that is what this catches. Trim it to the fields you rely on.
+ */
+const Response = ${schemaFor(api.json)};
+`
+    : ` *
+ * It answered ${api.contentType || 'without a content type'}, not JSON, so there is no schema
+ * to hold it to: the check is the status and the content type.
+ */
+`
+}
+test.describe('${name.replace(/'/g, "\\'")} — API', () => {
+  test(
+    ${lit(`${api.path} answers with its contract`)},
+    { tag: ['@${area}', '@smoke', '@req:REQ-API-001'] },
+    async ({ api }) => {
+      const response = await api.get(${lit(api.path)});
+      expect(response.status()).toBe(${api.status});
+      ${
+        contract
+          ? `await expectSchema(response, Response, ${lit(`GET ${api.path}`)});`
+          : `expect(response.headers()['content-type']).toContain(${lit(api.contentType)});`
+      }
+    },
+  );
+});
+`;
+    files['requirements/API.md'] = `---
+epic: ${name}
+journey: API
+priority: critical
+---
+
+# ${name} — API
+
+Generated by \`npm run init\` from one live GET. The API lane runs over HTTP with no
+browser, in seconds; add a requirement here for every endpoint the product depends on.
+
+## REQ-API-001 — ${api.path} answers with its contract
+
+**Priority:** critical
+
+\`GET ${api.path}\` answers ${api.status}${
+      contract
+        ? ', and its body still carries every field it carried when the contract was written, with the same types. A field added by the provider is allowed; one dropped or retyped fails.'
+        : ` with \`${api.contentType}\`.`
+    }
+
+- Covered by: \`tests/api/${area}.api.spec.ts\` → _${api.path} answers with its contract_
+`;
+  }
   return files;
 }
 
@@ -554,7 +706,7 @@ function write(rel, contents) {
 }
 
 /** package.json: the scripts that named the reference lanes now name yours. */
-function retargetScripts({ hasLogin, name }) {
+function retargetScripts({ hasLogin, name, hasApi }) {
   const file = path.join(ROOT, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
   const lanes = "--project='bdd:*'";
@@ -567,6 +719,7 @@ function retargetScripts({ hasLogin, name }) {
   });
   // The reference lanes only it had (demo-layer.json "scripts"); the docs check knows.
   for (const name of JSON.parse(fs.readFileSync(MANIFEST, 'utf8')).scripts || []) delete pkg.scripts[name];
+  if (hasApi) pkg.scripts['test:api'] = 'playwright test --project=api';
   pkg.certance = {
     ...(pkg.certance || {}),
     seedProject: hasLogin ? 'bdd:app-anon' : 'bdd:app',
@@ -586,10 +739,11 @@ function registerEpic(area, name) {
   fs.writeFileSync(file, next);
 }
 
-const USAGE = `Usage: npm run init -- --url <app origin> [--login [path]] [--name "<app name>"] [--no-run] [--force]
+const USAGE = `Usage: npm run init -- --url <app origin> [--login [path]] [--api <endpoint url>] [--name "<app name>"] [--no-run] [--force]
 
   --url     where the application under test runs (BASE_URL overrides it later)
   --login   the application has a sign-in form, at this path (default: /)
+  --api     a read-only API endpoint (a health or info URL): one anonymous GET, then a contract test
   --name    what to call it in features, requirements and reports
   --no-run  scaffold only; do not run the smoke suite afterwards
   --force   run even though the reference target is already gone`;
@@ -613,11 +767,15 @@ async function main() {
 
   console.log(`init: reading ${url}${opts.login !== undefined ? ` (sign-in form at ${opts.login})` : ''} …`);
   const found = await probe(url, opts.login);
+  if (opts.api) {
+    console.log(`init: reading ${opts.api} (one GET) …`);
+    found.api = await probeApi(opts.api);
+  }
 
   for (const p of manifest.remove) rm(p);
-  const files = scaffold({ url, name, title: found.title, heading: found.heading, login: found.login });
+  const files = scaffold({ url, name, title: found.title, heading: found.heading, login: found.login, api: found.api });
   for (const [rel, contents] of Object.entries(files)) write(rel, contents);
-  retargetScripts({ hasLogin: Boolean(found.login), name });
+  retargetScripts({ hasLogin: Boolean(found.login), name, hasApi: Boolean(found.api) });
   registerEpic(slug(name), name);
   try {
     execFileSync('npx', ['prettier', '--write', ...Object.keys(files), 'package.json'], { cwd: ROOT, stdio: 'ignore' });
@@ -635,6 +793,12 @@ async function main() {
     }
     console.log('\n  Signed-in lanes switch on once TEST_USER_EMAIL and TEST_USER_PASSWORD are set in .env.');
   }
+  if (found.api) {
+    const fields = found.api.json && typeof found.api.json === 'object' ? Object.keys(found.api.json).length : 0;
+    console.log(
+      `  ✓ api      GET ${found.api.path} → ${found.api.status} ${found.api.contentType}${fields ? `, ${fields} field(s) in the contract` : ''}`,
+    );
+  }
 
   if (!opts.run) return;
   console.log('\ninit: running the smoke suite …\n');
@@ -647,7 +811,7 @@ async function main() {
   console.log('turn them into scenarios (docs/DEVELOPER_GUIDE.md). Every PR runs the same gates as this repo.');
 }
 
-module.exports = { parseArgs, candidates, scaffold, slug };
+module.exports = { parseArgs, candidates, scaffold, schemaFor, slug };
 
 if (require.main === module) {
   main().catch((e) => {
