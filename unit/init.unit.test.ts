@@ -113,6 +113,75 @@ describe('npm run init — the scaffold it writes', () => {
   });
 });
 
+describe('npm run init --api — the API lane it writes', () => {
+  const JSON_API = {
+    origin: 'https://api.example.test',
+    path: '/api/v1/info',
+    status: 200,
+    contentType: 'application/json',
+    json: { version: 'v2.5.0', 'link-sharing': true, motd: null, auth: { local: { enabled: true } }, tags: [] },
+  };
+  const TEXT_API = { origin: 'https://api.example.test', path: '/health', status: 200, contentType: 'text/plain' };
+  const withApi = init.scaffold({
+    url: 'https://app.example.test',
+    name: 'Payments portal',
+    login: LOGIN,
+    api: JSON_API,
+  });
+  const textApi = init.scaffold({ url: 'https://app.example.test', name: 'Docs site', title: 'Docs', api: TEXT_API });
+  const spec = (files: Record<string, string>, area: string) => files[`tests/api/${area}.api.spec.ts`];
+
+  it('passes the golden-rule lint, for a JSON contract and for a status-only check', async () => {
+    expect(await lintErrors(withApi)).toEqual([]);
+    expect(await lintErrors(textApi)).toEqual([]);
+  });
+
+  it('asserts the types the API returned, never its values', () => {
+    const src = init.schemaFor(JSON_API.json);
+    expect(src).toContain('version: z.string()');
+    expect(src).not.toContain('v2.5.0');
+    expect(src).toContain("'link-sharing': z.boolean()"); // not an identifier, so quoted
+    expect(src).toContain('motd: z.unknown()'); // one null says nothing about the type
+    expect(src).toContain('tags: z.array(z.unknown())');
+  });
+
+  it('caps the contract at twelve fields and says so, rather than asserting everything', () => {
+    const wide = Object.fromEntries(Array.from({ length: 15 }, (_, i) => [`f${i}`, i]));
+    const src = init.schemaFor(wide);
+    expect(src.match(/: z\.number\(\)/g)).toHaveLength(12);
+    expect(src).toContain('3 more field(s) not asserted');
+  });
+
+  it('checks the status and content type when the endpoint is not JSON', () => {
+    const src = spec(textApi, 'docs-site');
+    expect(src).toContain('expect(response.status()).toBe(200)');
+    expect(src).toContain("toContain('text/plain')");
+    expect(src).not.toContain('expectSchema');
+  });
+
+  it('adds an api lane and points the api fixture at the API, overridable by APP_API_URL', () => {
+    const config = withApi['app.config.ts'];
+    expect(config).toContain("const API = process.env.APP_API_URL || 'https://api.example.test'");
+    expect(config).toMatch(/name: 'api',\s+testDir: '\.\/tests\/api'/);
+  });
+
+  it('ties the API test to a requirement in the matrix', () => {
+    expect(spec(withApi, 'payments-portal')).toContain("'@req:REQ-API-001'");
+    expect(withApi['requirements/API.md']).toContain('## REQ-API-001 —');
+  });
+
+  it('escapes the app name safely in the generated test, backslashes included', async () => {
+    const files = init.scaffold({ url: 'https://a.test', name: "Ops\\Payments 'EU'", title: 'T', api: TEXT_API });
+    expect(spec(files, 'ops-payments-eu')).toContain("test.describe('Ops\\\\Payments \\'EU\\' — API'");
+    expect(await lintErrors(files)).toEqual([]);
+  });
+
+  it('writes no API lane when --api is not given', () => {
+    expect(Object.keys(withLogin).some((f) => f.startsWith('tests/api/'))).toBe(false);
+    expect(withLogin['app.config.ts']).not.toContain("name: 'api'");
+  });
+});
+
 describe('scripts/demo-layer.json — the boundary init cuts along', () => {
   // The application-specific directories. Anything tracked here belongs to the reference
   // target, and init must remove or replace it, or it survives into a customer's repo

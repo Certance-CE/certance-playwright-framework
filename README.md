@@ -65,15 +65,17 @@ Node 22 or newer (`.nvmrc` pins what `nvm` picks). No accounts, no API keys, not
 One command. It reads your application, swaps the reference demo for a scaffold of yours, and runs it:
 
 ```bash
-npm run init -- --url https://staging.your-app.com --login /sign-in --name "Payments portal"
+npm run init -- --url https://staging.your-app.com --login /sign-in \
+  --api https://api.your-app.com/health --name "Payments portal"
 ```
 
-| You get                                                                   | Why it matters                                                                                                                             |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `app.config.ts` with your URL and lanes                                   | the framework core (`playwright.config.ts`, `fixtures/`, `utils/`, the gates) is untouched                                                 |
-| a `LoginPage` whose locators were verified against your live sign-in form | role, then label, then placeholder, then test id. A control with none of those is flagged for a `data-testid`, never papered over with CSS |
-| a smoke feature tagged `@smoke` and `@req:`                               | traceability works from the first run                                                                                                      |
-| `requirements/SMOKE.md`                                                   | the coverage matrix has something true to report                                                                                           |
+| You get                                                                           | Why it matters                                                                                                                             |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `app.config.ts` with your URL and lanes                                           | the framework core (`playwright.config.ts`, `fixtures/`, `utils/`, the gates) is untouched                                                 |
+| a `LoginPage` whose locators were verified against your live sign-in form         | role, then label, then placeholder, then test id. A control with none of those is flagged for a `data-testid`, never papered over with CSS |
+| a smoke feature tagged `@smoke` and `@req:`                                       | traceability works from the first run                                                                                                      |
+| with `--api`, an API contract test generated from one live `GET` of your endpoint | it asserts the types the API returned, never their values; a field dropped or retyped fails, a field added does not                        |
+| `requirements/SMOKE.md`                                                           | the coverage matrix has something true to report                                                                                           |
 
 The first run needs **no credentials**: it checks the sign-in form, without signing in. Put a test account in `.env` (`TEST_USER_EMAIL`, `TEST_USER_PASSWORD`) and the signed-in lanes switch on by themselves. Measured on two applications the framework had never seen: **44 seconds** from `git clone` to a green run, and **11 seconds** from `init` to a green signed-in run, with lint, typecheck, docs, agent drift, unit tests and the integrity gate all passing on the resulting pull request. Leave out `--login` for an app with no sign-in.
 
