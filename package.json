@@ -89,7 +89,7 @@
     "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-playwright": "^2.12.1",
-    "lint-staged": "^17.5.1",
+    "lint-staged": "^17.6.0",
     "playwright-bdd": "^9.2.1",
     "playwright-ctrf-json-reporter": "^0.0.29",
     "prettier": "^3.9.10",
