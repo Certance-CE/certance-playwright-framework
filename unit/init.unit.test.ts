@@ -79,6 +79,14 @@ describe('npm run init — the scaffold it writes', () => {
     }
   });
 
+  it('measures page performance from the first run, with the core performance step', () => {
+    for (const files of [withLogin, noLogin]) {
+      expect(files['features/smoke.feature']).toMatch(
+        /@perf .*@req:REQ-SMOKE-00\d\n.*\n.*\n\s+Then the page meets its performance budget/,
+      );
+    }
+  });
+
   it('keeps the signed-in lanes out until a test account is configured', () => {
     const config = withLogin['app.config.ts'];
     expect(config).toContain('process.env.TEST_USER_EMAIL && process.env.TEST_USER_PASSWORD');
@@ -109,7 +117,11 @@ describe('scripts/demo-layer.json — the boundary init cuts along', () => {
   // The application-specific directories. Anything tracked here belongs to the reference
   // target, and init must remove or replace it, or it survives into a customer's repo
   // and breaks their first run. The core files that legitimately live here are named.
-  const CORE = new Set(['pages/BasePage.ts', 'requirements/README.md']);
+  const CORE = new Set([
+    'pages/BasePage.ts',
+    'requirements/README.md',
+    'features/step-definitions/performance.steps.ts',
+  ]);
   const manifest = JSON.parse(readFileSync(path.join(__dirname, '../scripts/demo-layer.json'), 'utf8'));
   const owned = (f: string) =>
     [...manifest.remove, ...manifest.replace].some((m: string) => (m.endsWith('/') ? f.startsWith(m) : f === m));

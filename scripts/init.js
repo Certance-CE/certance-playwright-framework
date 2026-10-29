@@ -383,6 +383,11 @@ Feature: ${name} — smoke
   Scenario: A user can sign in
     When I sign in with the test account
     Then I am signed in
+
+  @perf @signed-out @req:REQ-SMOKE-003
+  Scenario: The sign-in page loads within its performance budget
+    Given I open the sign-in page
+    Then the page meets its performance budget
 `;
     files['features/step-definitions/smoke.steps.ts'] = `import { createBdd } from 'playwright-bdd';
 import { test } from '../../fixtures';
@@ -438,6 +443,11 @@ Feature: ${name} — smoke
   Scenario: The application loads
     Given I open the application
     Then the application has loaded
+
+  @perf @req:REQ-SMOKE-002
+  Scenario: The application loads within its performance budget
+    Given I open the application
+    Then the page meets its performance budget
 `;
     files['features/step-definitions/smoke.steps.ts'] = `import { createBdd } from 'playwright-bdd';
 import { test } from '../../fixtures';
@@ -485,6 +495,15 @@ A valid test account signs in and leaves the sign-in form. Runs once TEST_USER_E
 TEST_USER_PASSWORD are set; until then this requirement reports as not covered.
 
 - Covered by: \`features/smoke.feature\` → _A user can sign in_
+
+## REQ-SMOKE-003 — The sign-in page loads within its performance budget
+
+**Priority:** normal
+
+The sign-in page meets the Core Web Vitals "good" thresholds, measured in a real browser: LCP ≤ 2.5 s,
+CLS ≤ 0.1, TTFB ≤ 800 ms. Tighten the budget in the scenario once you know your own target.
+
+- Covered by: \`features/smoke.feature\` → _The sign-in page loads within its performance budget_
 `
     : `
 ## REQ-SMOKE-001 — The application loads
@@ -494,6 +513,15 @@ TEST_USER_PASSWORD are set; until then this requirement reports as not covered.
 The landing page loads and shows what a user expects to see first.
 
 - Covered by: \`features/smoke.feature\` → _The application loads_
+
+## REQ-SMOKE-002 — The application loads within its performance budget
+
+**Priority:** normal
+
+The landing page meets the Core Web Vitals "good" thresholds, measured in a real browser: LCP ≤ 2.5 s,
+CLS ≤ 0.1, TTFB ≤ 800 ms. Tighten the budget in the scenario once you know your own target.
+
+- Covered by: \`features/smoke.feature\` → _The application loads within its performance budget_
 `
 }`;
 
