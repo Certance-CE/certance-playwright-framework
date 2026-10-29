@@ -316,14 +316,14 @@ outputs can be recombined with `npx playwright merge-reports`.
 
 A capability is "proven" only when a test exercises it. In the table below, treat each as proven against the running app or a self-test unless the row says otherwise. The README and `docs/GOLDEN_RULES.md` say the same:
 
-| Capability           | Implementation                                                                                                       |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| API request context  | `fixtures/api.fixture.ts` (the `api` fixture) + `skills/core/api.md`                                                 |
-| Visual regression    | **Scaffolding, no caller yet.** `utils/visual.ts` + `skills/core/visual.md` ship; nothing exercises them       |
-| Accessibility checks | **Self-tested against a stub.** `fixtures/a11y.fixture.ts` (`@axe-core/playwright`); exercised only in `framework-tests/foundation.spec.ts` against hand-written HTML, not the reference app                 |
-| Test-data cleanup    | `fixtures/cleanup.fixture.ts` — LIFO disposers that run even on failure, proven by `framework-tests/cleanup.spec.ts` |
-| Contract validation  | `utils/contract.ts` (Zod) + `framework-tests/contract.spec.ts`                                                       |
-| Performance metrics  | **Scaffolding, no caller yet.** `fixtures/perf.fixture.ts` + `utils/performance.ts` (`web-vitals`) ship; nothing exercises them |
+| Capability           | Implementation                                                                                                                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API request context  | `fixtures/api.fixture.ts` (the `api` fixture) + `skills/core/api.md`                                                                                                                                              |
+| Visual regression    | **Scaffolding, no caller yet.** `utils/visual.ts` + `skills/core/visual.md` ship; nothing exercises them                                                                                                          |
+| Accessibility checks | **Self-tested against a stub.** `fixtures/a11y.fixture.ts` (`@axe-core/playwright`); exercised only in `framework-tests/foundation.spec.ts` against hand-written HTML, not the reference app                      |
+| Test-data cleanup    | `fixtures/cleanup.fixture.ts` — LIFO disposers that run even on failure, proven by `framework-tests/cleanup.spec.ts`                                                                                              |
+| Contract validation  | `utils/contract.ts` (Zod) + `framework-tests/contract.spec.ts`                                                                                                                                                    |
+| Performance metrics  | **Proven against the reference app, in CI.** `fixtures/perf.fixture.ts` + `utils/performance.ts` (`web-vitals` + CDP); `features/performance.feature` (REQ-PERF-001/002), budget table via `npm run perf:summary` |
 
 > **Adoption note.** The cleanup _mechanism_ ships and is proven by
 > `framework-tests/cleanup.spec.ts`. The TodoMVC reference example creates no server-side
