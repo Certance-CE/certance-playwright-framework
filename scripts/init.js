@@ -355,6 +355,7 @@ export class LoginPage extends BasePage {
 }
 `;
     files['tests/auth.setup.ts'] = `import { test as setup } from '@playwright/test';
+import { epic } from 'allure-js-commons';
 import { LoginPage } from '../pages/LoginPage';
 
 /**
@@ -363,6 +364,7 @@ import { LoginPage } from '../pages/LoginPage';
  * TEST_USER_PASSWORD are set (see app.config.ts); keep their values out of the repo.
  */
 setup('authenticate', async ({ page }) => {
+  await epic('Session setup'); // groups this run in the quality report
   const loginPage = new LoginPage(page);
   await loginPage.login(process.env.TEST_USER_EMAIL ?? '', process.env.TEST_USER_PASSWORD ?? '');
   await loginPage.expectSignedIn();
@@ -552,7 +554,7 @@ function write(rel, contents) {
 }
 
 /** package.json: the scripts that named the reference lanes now name yours. */
-function retargetScripts({ hasLogin }) {
+function retargetScripts({ hasLogin, name }) {
   const file = path.join(ROOT, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
   const lanes = "--project='bdd:*'";
@@ -565,7 +567,11 @@ function retargetScripts({ hasLogin }) {
   });
   // The reference lanes only it had (demo-layer.json "scripts"); the docs check knows.
   for (const name of JSON.parse(fs.readFileSync(MANIFEST, 'utf8')).scripts || []) delete pkg.scripts[name];
-  pkg.certance = { ...(pkg.certance || {}), seedProject: hasLogin ? 'bdd:app-anon' : 'bdd:app' };
+  pkg.certance = {
+    ...(pkg.certance || {}),
+    seedProject: hasLogin ? 'bdd:app-anon' : 'bdd:app',
+    reportName: `${name} — quality report`, // allurerc.mjs titles the report with it
+  };
   fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + '\n');
 }
 
@@ -611,7 +617,7 @@ async function main() {
   for (const p of manifest.remove) rm(p);
   const files = scaffold({ url, name, title: found.title, heading: found.heading, login: found.login });
   for (const [rel, contents] of Object.entries(files)) write(rel, contents);
-  retargetScripts({ hasLogin: Boolean(found.login) });
+  retargetScripts({ hasLogin: Boolean(found.login), name });
   registerEpic(slug(name), name);
   try {
     execFileSync('npx', ['prettier', '--write', ...Object.keys(files), 'package.json'], { cwd: ROOT, stdio: 'ignore' });

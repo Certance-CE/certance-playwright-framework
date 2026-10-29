@@ -1,7 +1,7 @@
 {
   "name": "certance-playwright-framework",
   "version": "1.0.0",
-  "description": "Certance Lens — an opinionated Playwright + BDD test-automation framework. Strict locator hierarchy, fixture-injected auth/data/network, web-first assertions, live API contract checks and requirement traceability, with 9 of its 12 rules enforced by lint. Runs green on a cold clone against a real self-hosted application; point BASE_URL at your own.",
+  "description": "Certance Lens \u2014 an opinionated Playwright + BDD test-automation framework. Strict locator hierarchy, fixture-injected auth/data/network, web-first assertions, live API contract checks and requirement traceability, with 9 of its 12 rules enforced by lint. Runs green on a cold clone against a real self-hosted application; point BASE_URL at your own.",
   "keywords": [
     "playwright",
     "testing",
@@ -60,6 +60,7 @@
     "gate:skips": "node scripts/governed-skip-check.js",
     "test:perf": "npm run bdd:gen && playwright test --grep @perf",
     "perf:summary": "node scripts/perf-summary.js",
+    "report": "allure generate allure-results --clean",
     "ctrf:summary": "node scripts/ctrf-summary.js",
     "pretest": "node scripts/preflight.js"
   },
@@ -84,6 +85,7 @@
     "@stryker-mutator/vitest-runner": "^10.0.0",
     "@types/node": "^26.6.5",
     "@vitest/coverage-v8": "^4.1.12",
+    "allure": "^3.22.1",
     "allure-playwright": "^3.13.0",
     "dotenv": "^17.4.2",
     "eslint": "^10.10.0",
@@ -103,6 +105,7 @@
     "node": ">=22"
   },
   "certance": {
-    "seedProject": "bdd:chromium"
+    "seedProject": "bdd:chromium",
+    "reportName": "Certance Lens reference \u2014 quality report"
   }
 }

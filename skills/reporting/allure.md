@@ -11,34 +11,33 @@ is for local debugging only. Allure is the report shared with stakeholders.
 
 ## Setup
 
-### Install dependencies
+Already wired in this repository; nothing to install. For reference:
 
-```bash
-npm install --save-dev allure-playwright allure-commandline
-```
+- **`allure-playwright`** writes `allure-results/` during every run (the reporter entry in
+  `playwright.config.ts`).
+- **`allure`** (Allure 3, a pure npm package: no Java) turns those results into the report.
+  Its configuration is `allurerc.mjs`.
+- **`fixtures/allure.fixture.ts`** (auto) labels every test: epic from the area tag, feature
+  from the Gherkin `Feature:`, severity from `@smoke`/`@regression`, `requirement` from
+  `@req:`. Framework self-tests and session setup get headings of their own, so they never
+  mix with the application's results.
 
-### playwright.config.ts — add Allure reporter
+## What the customer gets
 
-```typescript
-import { defineConfig } from '@playwright/test';
+`npm run report` writes **one standalone HTML file**, `allure-report/index.html`. It opens
+from disk, with no server, and holds:
 
-export default defineConfig({
-  reporter: [
-    ['html'], // local debugging only
-    [
-      'allure-playwright',
-      {
-        detail: true,
-        outputFolder: 'allure-results',
-        suiteTitle: false,
-      },
-    ],
-  ],
-  // ... rest of config
-});
-```
+- results grouped **business area → feature → scenario**, with pass/fail counts per level;
+- every failure with its message, the exact locator, the call log, the screenshot and the
+  **Playwright trace, embedded and viewable inline**;
+- **Global Attachments**: the requirement traceability matrix (`npm run coverage:requirements`)
+  and the performance budget table (`npm run perf:summary`), rendered as tables;
+- **Graphs**: the trend across previous runs (up to 30), results by severity, current status;
+- the commit, branch and CI run it came from.
 
----
+It is a **download, not a published page**, on purpose: it contains screenshots of the
+application under test, so where it goes is the reader's decision. To publish it (GitHub
+Pages, an internal site), copy that one file; nothing else is needed.
 
 ## Tag taxonomy — required on every test
 
@@ -143,88 +142,28 @@ Linking tests to stories enables gap analysis against the backlog directly.
 ## Running and generating reports locally
 
 ```bash
-# Run tests and generate results
-npx playwright test
-
-# Generate HTML report from results
-npx allure generate allure-results --clean -o allure-report
-
-# Open report in browser
-npx allure open allure-report
+npm test                        # writes allure-results/
+npm run coverage:requirements   # requirements-coverage.md
+npm run perf:summary            # performance-report.md
+npm run report                  # allure-report/index.html — open it in a browser
 ```
 
-Add to `.gitignore`:
+`allure-results/` accumulates across local runs; delete it before a run when you want a
+report of that run alone. History lives in `allure-history/history.jsonl` (git-ignored).
 
-```
-allure-results/
-allure-report/
-```
+## CI: the quality-report artifact
 
----
+The BDD job runs the steps above, then:
 
-## CI publishing — GitHub Actions
+1. restores `allure-history/` from the Actions cache (the branch's own history, or `main`'s
+   for a new branch);
+2. runs `npm run report`;
+3. saves the updated history back to the cache;
+4. uploads `allure-report/index.html` as the **`quality-report`** artifact (kept 30 days).
 
-Add these steps to your test job, after the Playwright run:
-
-```yaml
-- name: Run Playwright tests
-  run: npx playwright test
-  env:
-    BASE_URL: ${{ secrets.BASE_URL }}
-
-- name: Generate Allure report
-  if: always()
-  run: npx allure generate allure-results --clean -o allure-report
-
-- name: Upload Allure report
-  if: always()
-  uses: actions/upload-artifact@v4
-  with:
-    name: allure-report-${{ github.run_number }}
-    path: allure-report/
-    retention-days: 30
-
-- name: Upload raw Allure results (for trend tracking)
-  if: always()
-  uses: actions/upload-artifact@v4
-  with:
-    name: allure-results-${{ github.run_number }}
-    path: allure-results/
-    retention-days: 30
-```
-
-**Note:** Upload both the generated report and the raw results. Raw results
-are needed for Allure trend charts across runs.
-
----
-
-## Trend history in CI
-
-To enable trend charts (pass rate over time), carry the history folder
-forward between runs:
-
-```yaml
-- name: Download previous Allure history
-  uses: actions/download-artifact@v4
-  with:
-    name: allure-history
-    path: allure-results/history
-  continue-on-error: true # first run will have no history
-
-- name: Generate Allure report with history
-  if: always()
-  run: npx allure generate allure-results --clean -o allure-report
-
-- name: Save Allure history for next run
-  if: always()
-  uses: actions/upload-artifact@v4
-  with:
-    name: allure-history
-    path: allure-report/history/
-    retention-days: 90
-```
-
----
+Every step runs `if: always()`, so a failing run still produces its report: that is the run
+a customer most needs to read. The report name comes from `certance.reportName` in
+`package.json`, which `npm run init` sets to `<your app> — quality report`.
 
 ## Gap report template (for stakeholders)
 

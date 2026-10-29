@@ -29,13 +29,14 @@ The framework's whole argument is evidence over green, so this README holds itse
 
 **After `npm run setup`** (starts a real application locally):
 
-| Claim                                                                                                                                              | Run                                          |
-| -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| The suite runs against a real app whose DOM was not written for these tests, signed in and signed out                                              | `npm run test:app`                           |
-| API responses are checked against a schema, so a backend change is caught here rather than in production                                           | `npm run test:api`                           |
-| Every catalogued requirement is traced to a test, reported as a matrix                                                                             | `npm run coverage:requirements`              |
-| Page performance (Core Web Vitals and engine time) is measured on every run, and a breach, or a metric that was never measured, fails the scenario | `npm run test:perf`                          |
-| A test that fails and then passes on retry fails the build                                                                                         | `failOnFlakyTests` in `playwright.config.ts` |
+| Claim                                                                                                                                                              | Run                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| The suite runs against a real app whose DOM was not written for these tests, signed in and signed out                                                              | `npm run test:app`                           |
+| API responses are checked against a schema, so a backend change is caught here rather than in production                                                           | `npm run test:api`                           |
+| Every catalogued requirement is traced to a test, reported as a matrix                                                                                             | `npm run coverage:requirements`              |
+| Page performance (Core Web Vitals and engine time) is measured on every run, and a breach, or a metric that was never measured, fails the scenario                 | `npm run test:perf`                          |
+| Every run produces one standalone HTML quality report: results by business area, each failure's trace, the requirement matrix, the performance table and the trend | `npm run report`                             |
+| A test that fails and then passes on retry fails the build                                                                                                         | `failOnFlakyTests` in `playwright.config.ts` |
 
 The contract lane found a real inconsistency in the application under test on its first live run. It is pinned by a characterisation test rather than smoothed over. That is the behaviour this framework argues for: a suite that records what is true, including the awkward parts, instead of a number that flatters everyone.
 

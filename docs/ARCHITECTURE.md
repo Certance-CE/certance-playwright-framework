@@ -304,9 +304,13 @@ workflow.
 
 ## 10. Reporting
 
-Allure is the primary reporter (configured in `playwright.config.ts`), alongside
-the built-in HTML/`list`/JSON reporters and a CTRF summary that feeds the GitHub
-Actions run summary. Tag taxonomy (`@epic` / `@feature` / `@severity`) is defined
+Allure is the primary reporter. `allure-playwright` (configured in
+`playwright.config.ts`) records every run, and `npm run report` (Allure 3, configured in
+`allurerc.mjs`) builds the customer-facing **quality report**: one standalone HTML file
+with results by business area and feature, every failure's trace and screenshot, the
+requirement matrix and performance table as global attachments, and the trend across
+runs. CI uploads it as the `quality-report` artifact. The built-in HTML/`list`/JSON
+reporters and a CTRF summary (the GitHub Actions run summary) remain for engineers. Tag taxonomy (`@epic` / `@feature` / `@severity`) is defined
 in `skills/reporting/allure.md`. Sharded runs use the `blob` reporter so shard
 outputs can be recombined with `npx playwright merge-reports`.
 
