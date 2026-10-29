@@ -15,9 +15,9 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       reportsDirectory: './coverage',
       // Scoped to the pure, dependency-free modules that unit tests can honestly
-      // reach. utils/performance.ts injects a script into a live page and
-      // utils/visual.ts needs a Page — both are covered by Playwright, not vitest.
-      include: ['utils/contract.ts', 'utils/test-data.ts'],
+      // reach. utils/performance.ts's budget logic is pure (its page script and file
+      // I/O run in the @perf lane); utils/visual.ts needs a Page, so Playwright owns it.
+      include: ['utils/contract.ts', 'utils/test-data.ts', 'utils/performance.ts'],
     },
   },
 });

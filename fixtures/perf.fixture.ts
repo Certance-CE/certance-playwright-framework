@@ -38,6 +38,22 @@ export const test = cleanupTest.extend<{ perf: Perf }>({
     await cdp.send('Performance.enable');
 
     const collect = async (): Promise<PerfMetrics> => {
+      // Measure a page that has finished loading, not one whose DOM has merely parsed: an
+      // app that renders in JavaScript paints its largest element after DOMContentLoaded
+      // (measured: 784 ms on a React sign-in page whose step returned at ~500 ms). Wait for
+      // the load event and for LCP and FCP to report, bounded; if they never do, the budget
+      // reports them as not measured rather than passing them.
+      await page.waitForLoadState('load');
+      await page
+        .waitForFunction(
+          () => {
+            const v = (globalThis as unknown as { __PERF_VITALS__?: Record<string, number | null> }).__PERF_VITALS__;
+            return v?.lcp != null && v?.fcp != null;
+          },
+          null,
+          { timeout: 10_000 },
+        )
+        .catch(() => undefined);
       // Flush paint observers (2 frames) so LCP/CLS/FCP report before we read them.
       const vitals = await page.evaluate(async () => {
         const g = globalThis as unknown as {
@@ -94,7 +110,9 @@ export const test = cleanupTest.extend<{ perf: Perf }>({
       await attachment('performance-metrics', JSON.stringify(metrics, null, 2), 'application/json');
       writePerfRecord({ name: testInfo.title, url: page.url(), metrics, budget, violations });
 
-      const summary = violations.map((v) => `${v.metric}=${v.value} > ${v.limit}`).join(', ');
+      const summary = violations
+        .map((v) => (v.value === null ? `${v.metric} not measured` : `${v.metric}=${v.value} > ${v.limit}`))
+        .join(', ');
       expect.soft(violations, `performance budget exceeded: ${summary}`).toEqual([]);
       return metrics;
     };

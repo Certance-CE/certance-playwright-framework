@@ -58,6 +58,7 @@
     "coverage:requirements": "node scripts/requirements-coverage.js",
     "agents:sync": "node scripts/agents-sync.js",
     "gate:skips": "node scripts/governed-skip-check.js",
+    "test:perf": "npm run bdd:gen && playwright test --grep @perf",
     "perf:summary": "node scripts/perf-summary.js",
     "ctrf:summary": "node scripts/ctrf-summary.js",
     "pretest": "node scripts/preflight.js"
