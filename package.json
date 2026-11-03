@@ -88,7 +88,7 @@
     "allure": "^3.22.1",
     "allure-playwright": "^3.13.0",
     "dotenv": "^17.4.2",
-    "eslint": "^10.10.0",
+    "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-playwright": "^2.12.1",
     "lint-staged": "^17.6.0",
