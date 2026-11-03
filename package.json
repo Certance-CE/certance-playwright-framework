@@ -96,7 +96,7 @@
     "playwright-ctrf-json-reporter": "^0.0.29",
     "prettier": "^3.9.10",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.70.0",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^4.1.12",
     "web-vitals": "^6.2.3",
     "zod": "^4.6.7"
