@@ -28,19 +28,41 @@ node scripts/fetch-doc.js <url> --max 40000
 
 ## Step 2 — extract requirements (grounded, no invention)
 
-Write `requirements/<AREA>.md` in the framework's requirement format: frontmatter
-(`id-prefix: REQ-<AREA>`, `epic`, `feature` = a feature tag, `journey` = a journey key,
-default `priority`), then one `## REQ-<AREA>-NN — <title>` block per distinct capability,
-each with a short user story and `Given/When/Then` acceptance criteria. Keep each criterion
-single-behaviour (the "one test, one scenario" golden rule: one criterion, one scenario).
+Write `requirements/<AREA>.md` in the format `requirements/README.md` defines and the
+coverage matrix parses (`requirements/TASKS.md` is a worked example):
+
+- **Frontmatter:** `epic`, `journey`, a default `priority`, and `feature`: the tag the
+  `requirements-to-bdd` agent will put on the feature (lowercase, hyphenated).
+- **One block per distinct capability**, in source order: a `## REQ-<AREA>-NNN — <title>`
+  heading (three digits: `001`, `002`, …), then a `**Priority:** <critical|high|normal|low>`
+  line, a short user story, and `Given/When/Then` acceptance criteria. Keep each criterion
+  single-behaviour (the "one test, one scenario" golden rule: one criterion, one scenario).
+
+**Priority is a business decision, and it decides what CI enforces:** the coverage gate fails
+a `critical` or `high` requirement that is not covered, and only reports the rest. Rank each
+requirement by **what the business loses when the behaviour breaks**, not by how prominently
+the source mentions it:
+
+| Priority   | When it breaks                                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `critical` | business-critical: data is saved or shown wrong, silently, or a person is blocked from a core journey (sign-in, payment, a deadline) |
+| `high`     | a critical scenario: the journey completes, but its result is filed, flagged or routed wrong                                         |
+| `normal`   | a convenience: the person can still reach the same result another way                                                                |
+| `low`      | a convenience the source does not fully define                                                                                       |
+
+Write the reason beside the priority as an HTML comment (`**Priority:** critical <!-- … -->`)
+so the reviewer sees it, and treat the ranking as a proposal: the person reviewing the file
+confirms or changes it before any scenario is written.
 
 ### Grounding rules
 
 1. **Only extract what the source supports** — every requirement traces to fetched text.
    Do not add requirements the source does not state.
-2. **Ambiguous → flag it** with `# TODO: <what is unclear>`; never invent detail.
+2. **Ambiguous → flag it** with a `> **TODO:** <what is unclear>` line below the criteria;
+   never invent detail. (A bare `# TODO:` renders as a heading in Markdown; inside the YAML
+   frontmatter a `# TODO:` comment is correct.)
 3. **No selectors or UI mechanics** — business-readable intent only.
-4. **Stable IDs** `REQ-<AREA>-01, -02, …` in source order.
+4. **Stable IDs** `REQ-<AREA>-001, -002, …` in source order.
 5. If the source does not map to an existing feature/journey, pick the closest and add
    `# TODO: confirm feature/journey`.
 

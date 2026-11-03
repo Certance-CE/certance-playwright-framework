@@ -14,7 +14,11 @@ export interface DemoAccount {
 }
 
 export async function registerAccount(api: APIRequestContext, seed: string): Promise<DemoAccount> {
-  const username = `lens${seed.replace(/\W/g, '').slice(0, 20).toLowerCase()}`;
+  return registerNamedAccount(api, `lens${seed.replace(/\W/g, '').slice(0, 20).toLowerCase()}`);
+}
+
+/** An account with exactly this username, for a scenario whose text names the user. */
+export async function registerNamedAccount(api: APIRequestContext, username: string): Promise<DemoAccount> {
   const password = `Lx${crypto.randomBytes(12).toString('base64url')}!Qz9`;
   const response = await api.post('/api/v1/register', {
     data: { username, email: `${username}@example.invalid`, password },

@@ -19,6 +19,7 @@ const EPIC_BY_TAG: Record<string, string> = {
   authentication: 'Authentication',
   todos: 'Todo list',
   'task-management': 'Task management',
+  'quick-add-magic': 'Task management',
 };
 
 const SEVERITY_BY_TAG: Record<string, string> = {
