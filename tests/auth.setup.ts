@@ -3,7 +3,7 @@ import { epic } from 'allure-js-commons';
 import fs from 'node:fs';
 import path from 'node:path';
 import { LoginPage } from '../pages/LoginPage';
-import { registerAccount } from '../features/step-definitions/support/demo-account';
+import { registerAccount, registerNamedAccount } from '../features/step-definitions/support/demo-account';
 
 /**
  * Authentication setup — runs once, before anything that needs a signed-in session.
@@ -14,6 +14,7 @@ import { registerAccount } from '../features/step-definitions/support/demo-accou
  */
 const AUTH_FILE = path.join(__dirname, '../test-data/.auth/user.json');
 const ACCOUNT_FILE = path.join(__dirname, '../test-data/.auth/account.json');
+const COLLABORATORS = ['david'];
 
 setup('authenticate', async ({ page }) => {
   // This file uses Playwright's own `test`, so the labelling fixture does not run: say where
@@ -21,6 +22,15 @@ setup('authenticate', async ({ page }) => {
   await epic('Session setup');
   const api = await request.newContext({ baseURL: process.env.APP_API_URL });
   const account = await registerAccount(api, `setup${Date.now()}`);
+  // Accounts a scenario names (features/quick-add-magic.feature assigns a task to "david").
+  // Registered here, once, for the same reason as the main account: the application
+  // rate-limits unauthenticated requests per IP, and a scenario registering mid-run hit 429.
+  for (const username of COLLABORATORS) {
+    // A reused local server (reuseExistingServer) already has them from the last run.
+    await registerNamedAccount(api, username).catch((e: unknown) => {
+      if (!/exist/i.test(String(e))) throw e;
+    });
+  }
   await api.dispose();
 
   const loginPage = new LoginPage(page);
