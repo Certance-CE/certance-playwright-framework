@@ -1,18 +1,16 @@
 import { createBdd } from 'playwright-bdd';
 import { expect } from '@playwright/test';
 import { test } from '../../fixtures';
-import { createProject, createTask, deleteProject, tasksInProject, type DemoProject } from './support/demo-tasks';
+import {
+  PROJECT,
+  createProject,
+  createTask,
+  deleteProject,
+  scenarioProject as project,
+  tasksInProject,
+} from './support/demo-tasks';
 
 const { Given, When, Then } = createBdd(test);
-
-/** The project this scenario owns, kept in the generic per-scenario scratch space. */
-const PROJECT = 'demo.project';
-
-function project(scenario: Map<string, unknown>): DemoProject {
-  const value = scenario.get(PROJECT);
-  if (!value) throw new Error('no project for this scenario — the Background step should run first');
-  return value as DemoProject;
-}
 
 Given('a project created over the API', async ({ api, data, scenario, cleanup }) => {
   const created = await createProject(api, data.projectName('Ledger'));
