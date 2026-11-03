@@ -12,12 +12,13 @@ REQ_FAIL_ON_GAP=1 npm run coverage:requirements   # fail on an uncovered critica
 
 ## What the percentage means, and what it does not
 
-The matrix currently reports **24/24**. That is 100% of the requirements written down
-here — it is **not** a claim that the application is fully tested, and the distinction
-matters more than the number.
+The matrix reports **35/39**: every critical and high requirement written down here is
+covered, and four normal or low ones in `QUICKADD.md` are deliberate gaps, left for a later
+iteration. Even a full matrix is **not** a claim that the application is fully tested, and
+the distinction matters more than the number.
 
 The reference application has teams, sharing, kanban boards, saved filters, reminders,
-repeating tasks, attachments and subtasks. None of that is catalogued, so none of it
+attachments and more. None of that is catalogued, so none of it
 appears as a gap. A requirement that has never been written cannot show up as missing,
 which is the honest limitation of every traceability matrix ever produced.
 
@@ -32,6 +33,17 @@ the matrix should show the real edge of coverage, not the edge of what was conve
 
 A gap with a reason is a decision. A gap with no requirement is an oversight nobody
 will ever find.
+
+## Ranking: business-critical first
+
+Priority decides what CI enforces: an uncovered `critical` or `high` requirement fails the
+gate, the rest are reported. Rank by what the business loses when the behaviour breaks:
+
+- **critical**: data is saved or shown wrong, silently, or a person is blocked from a core
+  journey;
+- **high**: the journey completes, but its result is filed, flagged or routed wrong;
+- **normal**: a convenience the person can reach another way;
+- **low**: a convenience the requirement does not fully define.
 
 ## Adding one
 

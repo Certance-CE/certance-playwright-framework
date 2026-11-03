@@ -72,7 +72,9 @@ These are properties of the application under test, not of the framework. Workin
 against them produces flake that looks like a broken locator.
 
 - **SQLite serialises writes.** Concurrent writers get HTTP 500. Every lane that
-  writes runs `workers: 1` via `SERIALISED_WRITES` in `app.config.ts`.
+  writes runs `workers: 1` via `SERIALISED_WRITES` in `app.config.ts`, and the application
+  itself runs with one database connection (`VIKUNJA_DATABASE_MAXOPENCONNECTIONS`), because its
+  frontend sends some writes in parallel.
 - **Sign-in is rate limited** — roughly 8 per IP per minute, keyed by IP, counting
   failures, and shared with `/user/token/refresh`, which a single-page application
   spends freely. Do not add logins casually, and do not hunt flake with

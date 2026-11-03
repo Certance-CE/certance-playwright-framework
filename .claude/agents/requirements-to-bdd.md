@@ -16,12 +16,20 @@ subagents beside it are Playwright's own, and write the code afterwards.
 
 - **Frontmatter:** `epic`, `feature` (a feature tag), `journey` (a journey key), and a
   default `priority`.
-- **Requirements:** `## REQ-<AREA>-NN — <title>` blocks, each with a short user story and
-  `Given / When / Then` acceptance criteria.
+- **Requirements:** `## REQ-<AREA>-NNN — <title>` blocks, each with a `**Priority:**` line
+  (falling back to the frontmatter default), a short user story and `Given / When / Then`
+  acceptance criteria.
 
 ## Output — `features/<feature>.feature`
 
 - The **Feature** carries `@<feature>` and, when the frontmatter has one, `@journey:<journey>`.
+- It also carries the **lane tag** of the application it tests, copied from an existing
+  feature for the same application (in this repository, `@app` for the self-hosted reference
+  app; untagged features run against TodoMVC). The lanes select scenarios by tag in
+  `app.config.ts`, so a scenario without the right one runs against the wrong application.
+- **Every new feature tag gets an entry** in `EPIC_BY_TAG` in `fixtures/allure.fixture.ts`
+  (`'<feature>': '<epic>'`). Without one, the scenarios have no epic in the quality report
+  and drop out of its business-area view.
 - **Each acceptance criterion becomes exactly one Scenario** (the "one test, one scenario"
   golden rule).
 - Every scenario is tagged `@req:REQ-<AREA>-NN` for traceability, plus a severity tag:
@@ -35,11 +43,21 @@ subagents beside it are Playwright's own, and write the code afterwards.
 1. Preserve requirement IDs exactly — one `@req:` tag per requirement satisfied.
 2. One scenario per acceptance criterion — never merge criteria into one scenario.
 3. Keep steps declarative and business-readable.
-4. Map priority → severity: `critical → @smoke`; `high` / `normal` / `low → @regression`.
+4. Map each requirement's own `**Priority:**` → severity: `critical → @smoke`; `high` /
+   `normal` / `low → @regression`.
 5. **Do not invent requirements.** If a criterion is ambiguous, emit the scenario with a
    `# TODO:` comment and an `@wip` tag rather than guessing.
 6. **Reuse existing step phrasing** where `features/step-definitions/` already has a
    matching step, so `bddgen` binds without new glue and the generator writes less code.
+   **Read the step's body first:** reusing a step reuses its assertions. `I add the task
+{string}` waits for a task with exactly the typed title, so it cannot carry Quick Add
+   input whose stored title differs by design; a scenario whose action changes what it
+   types needs its own step.
+7. **Relative dates and times need a fixed clock.** If a criterion says "tomorrow", "next
+   Monday" or "the 17th", start the scenario with `Given today is <Weekday> <D> <Month>
+<YYYY>`, so it means the same on every day it runs.
+8. **Journey tags are slugs:** `@journey:manage-work-in-a-project`, lowercase and hyphenated,
+   because a tag cannot contain spaces.
 
 ## Workflow
 
