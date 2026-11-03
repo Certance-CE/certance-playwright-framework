@@ -81,6 +81,12 @@ export function target({ bddDir }: { bddDir: string }): Target {
           env: {
             VIKUNJA_DATABASE_TYPE: 'sqlite',
             VIKUNJA_DATABASE_PATH: APP_DB,
+            // One connection, so the application's own writes queue instead of colliding.
+            // SQLite accepts one writer at a time, and Vikunja's frontend sends some writes
+            // in parallel: Quick Add saves a task and then its labels and assignees at once,
+            // and the labels came back HTTP 500 under load (seen in a failure trace). A pool
+            // of one matches what SQLite is; SERIALISED_WRITES below does the same for tests.
+            VIKUNJA_DATABASE_MAXOPENCONNECTIONS: '1',
             VIKUNJA_FILES_BASEPATH: path.join(os.tmpdir(), 'certance-lens-files'),
             VIKUNJA_SERVICE_PUBLICURL: `${APP}/`,
             VIKUNJA_SERVICE_ENABLEREGISTRATION: 'true',
@@ -111,7 +117,9 @@ export function target({ bddDir }: { bddDir: string }): Target {
         // showed up as a flaky login rather than as the rate limit it was.
         dependencies: ['setup', 'bdd:app-anon'],
         ...SERIALISED_WRITES,
-        use: { ...devices['Desktop Chrome'], baseURL: APP, storageState: AUTH_FILE },
+        // UTC, so a date typed in the browser means the same day on every machine. CI runs
+        // in UTC; a laptop in Warsaw does not, and "tomorrow at 5pm" would differ by an hour.
+        use: { ...devices['Desktop Chrome'], baseURL: APP, storageState: AUTH_FILE, timezoneId: 'UTC' },
       },
       // The same application with NO session injected.
       //

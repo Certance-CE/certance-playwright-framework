@@ -43,6 +43,18 @@ export class ProjectPage extends BasePage {
   }
 
   /**
+   * Add a task through Quick Add Magic. The typed text carries markers (labels, dates,
+   * priority, project) that the application turns into fields, so the title it shows is
+   * deliberately not what was typed. Submission is confirmed by the field clearing; what
+   * was saved is checked over the API, where the fields are.
+   */
+  async quickAdd(text: string) {
+    await this.newTaskField().fill(text);
+    await this.page.getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(this.newTaskField()).toHaveValue('');
+  }
+
+  /**
    * Complete a task from the keyboard.
    *
    * `check()` fails on the screen-reader-only input, and `check({ force: true })` would
