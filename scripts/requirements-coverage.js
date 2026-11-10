@@ -382,11 +382,21 @@ function main() {
     );
   }
 
+  // A critical, high or unset requirement that is not covered. The gate fails on these when
+  // REQ_FAIL_ON_GAP=1; otherwise they are a warning, at the top of the matrix and in CI.
+  const gated = (r) => r.priority === 'critical' || r.priority === 'high' || r.priority === 'unset';
+  const bad = rows.filter((r) => gated(r) && r.state !== 'covered');
+
   // Traceability matrix
   const total = rows.length;
   const covered = rows.filter((r) => r.state === 'covered').length;
   const pct = total ? Math.round((covered / total) * 100) : 0;
   let md = `# Requirement traceability\n\n**${covered}/${total} requirements covered (${pct}%)** — generated ${new Date().toISOString()}\n\n`;
+  if (bad.length) {
+    md += `> ⚠️ **${bad.length} critical, high or unset requirement(s) not covered:** ${bad
+      .map((r) => `\`${r.id}\` (${r.state})`)
+      .join(', ')}\n\n`;
+  }
   md += `_Covered means a tagged scenario passed AND its bound steps assert something. A pass with no assertion is \`structural\`, not covered._\n\n`;
   md += `| Requirement | Title | Priority | Scenarios | Status |\n|---|---|---|---|---|\n`;
   const ranked = [...rows].sort(
@@ -425,12 +435,19 @@ function main() {
   // gap, a failing test, a never-run (pending) or a green-but-empty (structural)
   // one all fail — muting a test can no longer sneak a requirement past the gate.
   if (process.env.REQ_FAIL_ON_GAP === '1') {
-    const gated = (r) => r.priority === 'critical' || r.priority === 'high' || r.priority === 'unset';
-    const bad = rows.filter((r) => gated(r) && r.state !== 'covered');
     if (bad.length) {
       console.error(`\nrequirement gate: ${bad.length} critical/high/unset requirement(s) not covered:`);
       for (const r of bad) console.error(`  ${STATE_ICON[r.state]} ${r.state} ${r.id} — ${r.title}`);
       process.exit(1);
+    }
+  } else if (bad.length) {
+    // Report-only (the founder's call, 2026-11-10): a gap must be impossible to miss, without
+    // blocking the build. In GitHub Actions each one becomes a warning annotation on the run.
+    console.warn(`\nrequirement warning: ${bad.length} critical/high/unset requirement(s) not covered (not enforced)`);
+    for (const r of bad) {
+      const text = `${r.id} [${r.priority}] — ${r.title} (${r.state})`;
+      if (process.env.GITHUB_ACTIONS === 'true') console.log(`::warning title=Requirement not covered::${text}`);
+      else console.warn(`  ⚠️ ${text}`);
     }
   }
 }

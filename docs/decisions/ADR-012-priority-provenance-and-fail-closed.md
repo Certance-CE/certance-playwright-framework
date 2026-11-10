@@ -87,8 +87,8 @@ first run, where defaulting it to `normal` hid it for good.
 - A customer's freshly initialised repository shows its scaffold priorities as proposals until
   someone confirms them.
 
-**Not decided here (open in the intent document):** guarding a lowered or deleted priority
-with a recorded reason, and turning the requirement gate on in CI (`REQ_FAIL_ON_GAP=1`).
+The two questions this record first left open were decided on the same day; see the
+extension below.
 
 ---
 
@@ -99,6 +99,26 @@ previous engine: no priority anywhere, a misspelt priority, an explicit `unset`,
 listed for confirmation, a source priority labelled. Three pin unchanged behaviour: a covered
 `unset` passes, a person-written `normal` only reports, a frontmatter default still applies.
 The reference matrix is unchanged at 35/39.
+
+---
+
+## Extension: lowering a priority, and the gate in CI (2026-11-10)
+
+The founder decided both open questions the same day.
+
+**A lowered priority or a deleted requirement needs a recorded reason.** The integrity gate
+(`npm run gate:skips`, ADR-009) gains a third check. A pull request that moves a requirement's
+priority down the scale (`critical` → `high` → `normal` → `low`), lowers a file's default
+priority, changes one to a word the engine does not know, or deletes a `## REQ-…` heading
+fails unless it carries a `governed-change:` note: on the new priority line, or anywhere in
+the diff for a deletion. Raising a priority, setting one where there was none, and moving a
+requirement to another file pass. Nine unit cases pin it; replayed over all 75 commits in the
+repository's history, it flagged none.
+
+**The requirement gate stays report-only in CI, and warns.** An uncovered `critical`, `high`
+or `unset` requirement becomes a GitHub Actions warning annotation on the run and a callout at
+the top of the matrix. It does not fail the build. `REQ_FAIL_ON_GAP=1` still turns the warning
+into a failure for a team that wants it. Three unit cases pin it.
 
 ---
 

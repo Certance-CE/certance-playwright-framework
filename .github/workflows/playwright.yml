@@ -116,8 +116,9 @@ jobs:
         run: npm run ctrf:summary
 
       # Traceability: requirements/*.md x @req: tags x this run's results.
-      # Gaps are reported, not enforced — set REQ_FAIL_ON_GAP=1 to make an
-      # uncovered critical/high requirement fail the job.
+      # Gaps are reported, not enforced (the founder's call): an uncovered critical, high
+      # or unset requirement is a warning annotation on the run and leads the summary. Set
+      # REQ_FAIL_ON_GAP=1 to make it fail the job instead.
       # Performance: the budget table for every @perf scenario (Core Web Vitals and engine
       # time), in the run summary. The scenarios themselves fail the suite on a breach;
       # this step only reports, so it can never turn a green run red.

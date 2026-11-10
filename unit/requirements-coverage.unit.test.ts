@@ -30,6 +30,7 @@ type Fixture = {
   pages?: Record<string, string>; // filename -> page-object TS
   results?: Record<string, unknown>[]; // allure result objects
   gate?: boolean; // REQ_FAIL_ON_GAP=1
+  env?: Record<string, string>; // extra environment, e.g. GITHUB_ACTIONS
 };
 
 /** Build a synthetic fixture set in a fresh temp dir and run the real script over it. */
@@ -56,6 +57,8 @@ function run(f: Fixture) {
       REQ_MATRIX_OUT: matrix,
       REQ_FAIL_ON_GAP: f.gate ? '1' : '',
       GITHUB_STEP_SUMMARY: '',
+      GITHUB_ACTIONS: '',
+      ...f.env,
     },
   });
   return { status: proc.status, stdout: proc.stdout, stderr: proc.stderr, matrix: readFileSync(matrix, 'utf8') };
@@ -136,7 +139,7 @@ export class PayPage extends BasePage {
 const req = { 'payments.md': REQ };
 
 /** The matrix row for a requirement, or '' if absent. */
-const row = (md: string, id: string) => md.split('\n').find((l) => l.includes(`\`${id}\``)) ?? '';
+const row = (md: string, id: string) => md.split('\n').find((l) => l.startsWith(`| \`${id}\``)) ?? '';
 
 describe('requirements-coverage — coverage-engine defects and guards', () => {
   it('muted scenario cannot pass the gate', () => {
@@ -270,5 +273,40 @@ describe('requirements-coverage — priority provenance, fail closed', () => {
 
   it('the frontmatter default still applies to a requirement without its own line', () => {
     expect(run({ requirements: { 'p.md': reqWith('', 'low') }, ...gap }).status).toBe(0);
+  });
+});
+
+describe('requirements-coverage — report-only mode warns (2026-11-10)', () => {
+  it('an uncovered critical requirement is a warning, at the top of the matrix, and does not fail', () => {
+    const { status, matrix, stderr } = run({
+      requirements: req,
+      features: { 'payments.feature': FEATURE('@regression') },
+    });
+    expect(status).toBe(0);
+    expect(matrix.split('\n').slice(0, 5).join('\n')).toContain(
+      '⚠️ **1 critical, high or unset requirement(s) not covered:** `REQ-PAY-001` (gap)',
+    );
+    expect(stderr).toContain('requirement warning: 1');
+  });
+
+  it('becomes a GitHub warning annotation in Actions', () => {
+    const { stdout } = run({
+      requirements: req,
+      features: { 'payments.feature': FEATURE('@regression') },
+      env: { GITHUB_ACTIONS: 'true' },
+    });
+    expect(stdout).toContain('::warning title=Requirement not covered::REQ-PAY-001 [critical]');
+  });
+
+  it('says nothing when every gated requirement is covered', () => {
+    const { matrix, stderr } = run({
+      requirements: req,
+      features: { 'payments.feature': FEATURE() },
+      steps: { 'pay.steps.ts': STEPS_ASSERTING },
+      pages: { 'PayPage.ts': PAGE_ASSERTING },
+      results: [passed()],
+    });
+    expect(matrix).not.toContain('⚠️');
+    expect(stderr).not.toContain('requirement warning');
   });
 });
