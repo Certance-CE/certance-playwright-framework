@@ -1,7 +1,7 @@
 {
   "name": "certance-playwright-framework",
   "version": "1.0.0",
-  "description": "Certance Lens \u2014 an opinionated Playwright + BDD test-automation framework. Strict locator hierarchy, fixture-injected auth/data/network, web-first assertions, live API contract checks and requirement traceability, with 9 of its 12 rules enforced by lint. Runs green on a cold clone against a real self-hosted application; point BASE_URL at your own.",
+  "description": "Certance Lens — an opinionated Playwright + BDD test-automation framework. Strict locator hierarchy, fixture-injected auth/data/network, web-first assertions, live API contract checks and requirement traceability, with 9 of its 12 rules enforced by lint. Runs green on a cold clone against a real self-hosted application; point BASE_URL at your own.",
   "keywords": [
     "playwright",
     "testing",
@@ -85,7 +85,7 @@
     "@stryker-mutator/vitest-runner": "^10.1.1",
     "@types/node": "^26.6.5",
     "@vitest/coverage-v8": "^4.1.12",
-    "allure": "^3.22.1",
+    "allure": "^3.33.0",
     "allure-playwright": "^3.13.0",
     "dotenv": "^18.0.9",
     "eslint": "^10.14.0",
@@ -106,6 +106,6 @@
   },
   "certance": {
     "seedProject": "bdd:chromium",
-    "reportName": "Certance Lens reference \u2014 quality report"
+    "reportName": "Certance Lens reference — quality report"
   }
 }
