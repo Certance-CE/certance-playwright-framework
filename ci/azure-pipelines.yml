@@ -1,0 +1,127 @@
+# Certance Lens on Azure DevOps. Copy this file to `azure-pipelines.yml` at the repository root
+# (or run `npm run init -- … --ci azure`).
+#
+# It mirrors .github/workflows/playwright.yml: the same gates, through the same npm scripts, so
+# what passes on GitHub passes here. unit/ci-templates.unit.test.ts fails if the two drift
+# apart. This template has not been run on Azure DevOps by Certance; the GitHub workflow it
+# mirrors runs on every pull request.
+#
+# Sign-in, when the application needs it: create a variable group named `certance-lens` with
+# the secrets you use (TEST_USER_EMAIL, TEST_USER_PASSWORD, TEST_USER_TOTP_SECRET, or
+# STORAGE_STATE_BASE64 from `npm run auth:capture`). Azure leaves an undefined `$(NAME)` as
+# literal text, which is not empty, so DELETE the `env:` lines below for any secret you do not
+# define. No sign-in at all: delete the group line and the `env:` block.
+
+trigger:
+  branches:
+    include: [main]
+
+pr:
+  branches:
+    include: [main]
+
+variables:
+  - group: certance-lens
+  - name: CI
+    value: 'true'
+
+stages:
+  - stage: checks
+    jobs:
+      - job: lint
+        displayName: Lint, typecheck, docs, agent drift
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '24.x'
+          - script: npm ci
+            displayName: Install dependencies
+          - script: npm run lint
+            displayName: Lint (9 of 12 golden rules)
+          - script: npm run typecheck
+            displayName: Typecheck
+          - script: npm run check:docs
+            displayName: Docs resolve
+          - script: npm run agents:sync
+            displayName: Native agents in sync with Playwright
+
+      - job: unit
+        displayName: Integrity gate, unit, mutation
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+            fetchDepth: 0 # the integrity gate reads the pull request's diff
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '24.x'
+          - script: npm ci
+            displayName: Install dependencies
+          - script: npm run gate:skips
+            displayName: Integrity gate (no test muted, no assertion or priority weakened)
+            condition: eq(variables['Build.Reason'], 'PullRequest')
+            env:
+              GOVERNED_SKIP_BASE: origin/$(System.PullRequest.TargetBranchName)
+          - script: npm run test:unit
+            displayName: Unit tests
+          - script: npm run test:mutation
+            displayName: Mutation testing (fails below 70%)
+
+  - stage: suite
+    dependsOn: []
+    jobs:
+      - job: suite
+        displayName: The suite, and the quality report
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '24.x'
+          - script: npm ci
+            displayName: Install dependencies
+          - script: npx playwright install --with-deps chromium
+            displayName: Install the browser
+          - script: npm run setup:app
+            displayName: Prepare the application under test
+          - script: npm test
+            displayName: Run the suite
+            env:
+              TEST_USER_EMAIL: $(TEST_USER_EMAIL)
+              TEST_USER_PASSWORD: $(TEST_USER_PASSWORD)
+              TEST_USER_TOTP_SECRET: $(TEST_USER_TOTP_SECRET)
+              STORAGE_STATE_BASE64: $(STORAGE_STATE_BASE64)
+          - script: npm run ctrf:summary
+            displayName: Test summary
+            condition: always()
+          - script: npm run perf:summary
+            displayName: Performance budgets
+            condition: always()
+          - script: npm run coverage:requirements
+            displayName: Requirement traceability
+            condition: always()
+          - task: Cache@2
+            displayName: Report history (the trend)
+            inputs:
+              key: '"allure-history" | "$(Build.SourceBranchName)"'
+              restoreKeys: |
+                "allure-history" | "$(Build.SourceBranchName)"
+                "allure-history" | "main"
+              path: allure-history
+          - script: npm run report
+            displayName: Build the quality report
+            condition: always()
+          - task: PublishPipelineArtifact@1
+            displayName: Quality report (one HTML file)
+            condition: always()
+            inputs:
+              targetPath: allure-report/index.html
+              artifact: quality-report
+          - task: PublishPipelineArtifact@1
+            displayName: Playwright report
+            condition: always()
+            inputs:
+              targetPath: playwright-report
+              artifact: playwright-report

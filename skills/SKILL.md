@@ -55,20 +55,20 @@ generated, reviewed, or modified in a Certance Lens project.
 > table says exactly which are — a rule enforced only by review is still a rule, but calling
 > it automated would be a lie an adopter can check in two minutes.
 >
-> | Rule                              | Enforced by                                                                       |
-> | --------------------------------- | --------------------------------------------------------------------------------- |
-> | 1 · Locator hierarchy             | **lint** — `.locator()`, `page.$`/`$$`, and text locators in specs are errors     |
-> | 2 · Page Object Model             | **lint** — direct `page.click/fill/press/...` in a spec or step is an error       |
-> | 3 · Fixtures over beforeEach      | **lint** — a `beforeEach`/`beforeAll` hook is an error; setup belongs in a fixture                                                                            |
-> | 4 · Test independence             | **lint** — `test.describe.serial` and module-scoped mutable state are errors                                                                            |
-> | 5 · Web-first assertions          | **lint** — `waitForTimeout`, missing `await`, and assertion-free tests are errors |
-> | 6 · Mock external dependencies    | **lint** — raw `page.route()` is an error; mock through the `network` fixture                                                                            |
-> | 7 · No real PII                   | **lint** — literal emails and direct `faker` imports are errors                                                                            |
-> | 8 · One scenario per test         | review                                                                            |
-> | 9 · Trace on for new tests        | **config** — `trace: 'retain-on-failure'` in `playwright.config.ts`               |
-> | 10 · Healer owns locator fixes    | process                                                                           |
-> | 11 · Fixtures inject Page Objects | **lint** — constructing a Page Object with `new` is an error                                                                            |
-> | 12 · Application-agnostic core    | **lint** — `utils/` importing `pages/` or `features/` is an error                 |
+> | Rule                              | Enforced by                                                                        |
+> | --------------------------------- | ---------------------------------------------------------------------------------- |
+> | 1 · Locator hierarchy             | **lint** — `.locator()`, `page.$`/`$$`, and text locators in specs are errors      |
+> | 2 · Page Object Model             | **lint** — direct `page.click/fill/press/...` in a spec or step is an error        |
+> | 3 · Fixtures over beforeEach      | **lint** — a `beforeEach`/`beforeAll` hook is an error; setup belongs in a fixture |
+> | 4 · Test independence             | **lint** — `test.describe.serial` and module-scoped mutable state are errors       |
+> | 5 · Web-first assertions          | **lint** — `waitForTimeout`, missing `await`, and assertion-free tests are errors  |
+> | 6 · Mock external dependencies    | **lint** — raw `page.route()` is an error; mock through the `network` fixture      |
+> | 7 · No real PII                   | **lint** — literal emails and direct `faker` imports are errors                    |
+> | 8 · One scenario per test         | review                                                                             |
+> | 9 · Trace on for new tests        | **config** — `trace: 'retain-on-failure'` in `playwright.config.ts`                |
+> | 10 · Healer owns locator fixes    | process                                                                            |
+> | 11 · Fixtures inject Page Objects | **lint** — constructing a Page Object with `new` is an error                       |
+> | 12 · Application-agnostic core    | **lint** — `utils/` importing `pages/` or `features/` is an error                  |
 >
 > **Nine of these twelve are enforced by lint.** Which mechanism holds up each rule —
 > lint, configuration, CI gate or review — is set out in `docs/GOLDEN_RULES.md`,
@@ -306,6 +306,7 @@ at once — load only what the current task requires.
 | ------------------------------------------ | ------------------------------------- |
 | [GitHub Actions](./ci/github-actions.md)   | Setting up GitHub CI pipeline         |
 | [Azure DevOps](./ci/azure-devops.md)       | Setting up Azure pipeline             |
+| [GitLab CI](./ci/gitlab.md)                | Setting up a GitLab pipeline          |
 | [Docker](./ci/docker.md)                   | Containerising test execution         |
 | [Sharding strategy](./ci/sharding.md)      | Splitting large suites across workers |
 | [Environment config](./ci/environments.md) | Managing staging / UAT / prod-mirror  |
@@ -420,7 +421,7 @@ running the Planner agent.
 - [ ] Review generated `plans/*.md` with the team
 - [ ] Run Generator agent on approved plans
 - [ ] Run `npx playwright test` — confirm generated tests pass
-- [ ] Connect CI pipeline using `ci/github-actions.md` or `ci/azure-devops.md`
+- [ ] Connect CI: GitHub Actions is set up; for Azure DevOps or GitLab, `npm run init -- … --ci azure|gitlab` (`ci/azure-devops.md`, `ci/gitlab.md`)
 - [ ] Confirm HTML report publishes correctly in CI
 
 ---
