@@ -150,6 +150,25 @@ field and dropping another failed with both fields named. GitHub's public API ro
 
 ---
 
+## Extension: one-time codes (2026-11-10)
+
+`--totp` adds the step most multi-factor sign-ins use: a code from an authenticator app,
+generated from the test account's secret (`TEST_USER_TOTP_SECRET`, RFC 6238). With the
+account in `.env`, `init` signs in on the customer's test environment, finds the code field by
+`autocomplete="one-time-code"` and verifies its locator; without it, the field is generated
+as a marked fallback. `init` now loads `.env` (it did not, so it could not see the account)
+and runs the same preflight as `npm test`, so a missing browser is one clear instruction.
+
+Proven on a local instance with TOTP switched on: the code field was found and verified, and
+the generated code signed in. The rehearsal found that **a code works once**. The setup
+project and the sign-in scenario, seconds apart, generated the same code and the second was
+rejected ("This totp passcode has already been used"; the application's own page showed a
+misleading time-zone error instead). Each 30-second step is now claimed once across workers
+and init's probe; four of five full runs, and three in a row at the end, passed. The fifth
+failed once in the sign-in page's performance scenario; nine further runs did not reproduce it.
+
+---
+
 ## Review date
 
 Revisit after the first customer `init`, against what it actually took.

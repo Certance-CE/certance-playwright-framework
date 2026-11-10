@@ -29,6 +29,13 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
+
+// The test account lives in .env, as for the suite; without this the probe cannot see it.
+try {
+  require('dotenv').config({ path: path.join(ROOT, '.env'), quiet: true });
+} catch {
+  /* dotenv is a dev dependency; without it, real environment variables still work */
+}
 const MANIFEST = path.join(__dirname, 'demo-layer.json');
 
 // ── Arguments ───────────────────────────────────────────────────────────────
@@ -42,6 +49,7 @@ function parseArgs(argv) {
     else if (a === '--login') opts.login = argv[i + 1] && !argv[i + 1].startsWith('--') ? next() : '/';
     else if (a === '--name') opts.name = next();
     else if (a === '--api') opts.api = next();
+    else if (a === '--totp') opts.totp = true;
     else if (a === '--no-run') opts.run = false;
     else if (a === '--force') opts.force = true;
     else if (a === '--help' || a === '-h') opts.help = true;
@@ -138,7 +146,7 @@ async function submitButton(form) {
   return visible.length ? visible[visible.length - 1].b : null;
 }
 
-async function probe(url, loginPath) {
+async function probe(url, loginPath, { totp: wantsTotp = false } = {}) {
   const { chromium } = require('@playwright/test');
   const browser = await chromium.launch();
   try {
@@ -168,6 +176,15 @@ async function probe(url, loginPath) {
       const info = await describe(handle);
       login[key] = await verified(page, handle, info);
       if (!login[key]) login.unresolved.push({ key, info });
+    }
+    // The one-time code step. It only appears after a correct password, so it can only be seen
+    // by signing in, and only with the account the customer set up for tests: credentials and
+    // its authenticator secret in .env. Without them, LoginPage gets a marked fallback.
+    const env = process.env;
+    if (env.TEST_USER_EMAIL && env.TEST_USER_PASSWORD && env.TEST_USER_TOTP_SECRET) {
+      login.code = await discoverCodeStep(page, { user, password, submit }, env);
+    } else if (wantsTotp) {
+      login.code = { discovered: false };
     }
     result.login = login;
     return result;
@@ -234,6 +251,87 @@ function schemaFor(value, depth = 0, indent = '') {
     lines.push(`${inner}// ${keys.length - MAX_FIELDS} more field(s) not asserted: add the ones you rely on.`);
   }
   return `z.object({\n${lines.join('\n')}\n${indent}})`;
+}
+
+/**
+ * Sign in on the customer's own test environment and find the one-time code field that
+ * appears after the password, by the HTML standard's autocomplete="one-time-code" (what
+ * authenticator-friendly sign-in pages use). Returns verified locators for the field and
+ * the button that submits it, and whether the code actually signed the account in.
+ */
+async function discoverCodeStep(page, { user, password, submit }, env) {
+  const { totp } = loadTotp();
+  await user.fill(env.TEST_USER_EMAIL);
+  await password.fill(env.TEST_USER_PASSWORD);
+  await submit.click();
+  const field = await page
+    .waitForSelector('input[autocomplete="one-time-code"]', { timeout: 15_000 })
+    .catch(() => null);
+  if (!field) return { discovered: false, note: 'no one-time code field appeared after the password' };
+  const form = await field.evaluateHandle((el) => el.form || el.closest('form') || el.ownerDocument.body);
+  const confirm = await submitButton(form.asElement());
+  const code = { discovered: true, field: await verified(page, field, await describe(field)) };
+  code.submit = confirm ? await verified(page, confirm, await describe(confirm)) : null;
+  // Claimed in the same register the suite uses (utils/totp.ts unusedTotp), or the suite's
+  // first sign-in, seconds later, would reuse this code and be rejected (measured).
+  await field.fill(await claimUnusedCode(env.TEST_USER_TOTP_SECRET, totp));
+  if (confirm) await confirm.click();
+  // Signed in means the password field has gone, the same test the generated LoginPage uses.
+  code.signedIn = await page
+    .waitForFunction(() => !globalThis.document.querySelector('input[type="password"]'), null, { timeout: 15_000 })
+    .then(() => true)
+    .catch(() => false);
+  return code;
+}
+
+/**
+ * The same claim as utils/totp.ts unusedTotp, in plain Node: one marker file per account and
+ * 30-second step, created atomically; a taken step means waiting for the next. Same file names,
+ * so init's probe and the suite share one register.
+ */
+async function claimUnusedCode(secret, totp) {
+  const crypto = require('node:crypto');
+  const dir = path.join(ROOT, 'test-data/.auth/totp');
+  fs.mkdirSync(dir, { recursive: true });
+  const account = crypto.createHash('sha256').update(secret).digest('hex').slice(0, 12);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const at = Date.now();
+    const step = Math.floor(at / 30_000);
+    try {
+      fs.closeSync(fs.openSync(path.join(dir, `${account}-${step}`), 'wx'));
+      return totp(secret, at);
+    } catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      await new Promise((resolve) => globalThis.setTimeout(resolve, (step + 1) * 30_000 - Date.now() + 50));
+    }
+  }
+  throw new Error('could not claim an unused one-time code');
+}
+
+/** utils/totp.ts, loaded through Playwright's TypeScript support so init stays plain Node. */
+function loadTotp() {
+  try {
+    return require('../utils/totp');
+  } catch {
+    // Plain node cannot load .ts. A tiny copy of the same RFC 6238 algorithm, for the probe only.
+    const crypto = require('node:crypto');
+    const b32 = (sec) => {
+      let bits = '';
+      for (const c of sec.replace(/[\s=-]/g, '').toUpperCase())
+        bits += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(c).toString(2).padStart(5, '0');
+      const out = [];
+      for (let i = 0; i + 8 <= bits.length; i += 8) out.push(parseInt(bits.slice(i, i + 8), 2));
+      return Buffer.from(out);
+    };
+    const totp = (sec, at = Date.now()) => {
+      const counter = Buffer.alloc(8);
+      counter.writeBigUInt64BE(BigInt(Math.floor(at / 30000)));
+      const h = crypto.createHmac('sha1', b32(sec)).update(counter).digest();
+      const o = h[h.length - 1] & 15;
+      return String((h.readUInt32BE(o) & 0x7fffffff) % 1e6).padStart(6, '0');
+    };
+    return { totp };
+  }
 }
 
 // ── Scaffold: pure, so it is unit-tested without a browser ──────────────────
@@ -389,8 +487,16 @@ ${pages.map(([c, f]) => `  ${f}: async ({ page }, use) => {\n    await use(new $
   if (hasLogin) {
     const unresolved = (key) => `this.page.getByTestId(${lit(`TODO-${key}`)})`;
     const loc = (key) => (login[key] ? `this.page.${login[key]}` : unresolved(key));
+    const code = login.code;
+    // A code field seen on the live page gets its verified locator; one not seen yet gets a
+    // label match that says so, because a guessed locator presented as verified is the
+    // overclaim this framework exists to prevent.
+    const codeField = code?.field
+      ? `this.page.${code.field}`
+      : `this.page.getByLabel(/one-time|two.?factor|verification code|authentication code|security code/i)`;
+    const codeSubmit = code?.submit ? `this.page.${code.submit}` : 'this.submit()';
     files['pages/LoginPage.ts'] = `import { expect } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { BasePage } from './BasePage';${code ? "\nimport { unusedTotp } from '../utils/totp';" : ''}
 
 /**
  * LoginPage — the sign-in form of ${name}.
@@ -414,16 +520,47 @@ export class LoginPage extends BasePage {
   private submit() {
     return ${loc('submit')};
   }
+${
+  code
+    ? `
+  /**
+   * The one-time code step${code.discovered ? ', found on the live page after a correct password' : ''}.${
+     code.discovered
+       ? ''
+       : `\n   * NOT YET SEEN: init had no test account with an authenticator secret, so this is a label\n   * match. Run init again with TEST_USER_* and TEST_USER_TOTP_SECRET in .env to verify it.`
+   }
+   */
+  private oneTimeCode() {
+    return ${codeField};
+  }
 
+  private confirmCode() {
+    return ${codeSubmit};
+  }
+`
+    : ''
+}
   async open() {
     await this.goto(${lit(login.path)});
   }
 
-  async login(username: string, password: string) {
+  async login(username: string, password: string${code ? ', totpSecret?: string' : ''}) {
     await this.open();
     await this.username().fill(username);
     await this.password().fill(password);
-    await this.submit().click();
+    await this.submit().click();${
+      code
+        ? `
+    // An account with an authenticator: the code is generated from its secret, as the app would
+    // show it (utils/totp.ts, RFC 6238), and claimed once per run, because a code works once.
+    // The secret comes from the caller, never this file.
+    if (totpSecret) {
+      await expect(this.oneTimeCode()).toBeVisible();
+      await this.oneTimeCode().fill(await unusedTotp(totpSecret));
+      await this.confirmCode().click();
+    }`
+        : ''
+    }
   }
 
   async expectFormShown() {
@@ -454,7 +591,7 @@ import { LoginPage } from '../pages/LoginPage';
 setup('authenticate', async ({ page }) => {
   await epic('Session setup'); // groups this run in the quality report
   const loginPage = new LoginPage(page);
-  await loginPage.login(process.env.TEST_USER_EMAIL ?? '', process.env.TEST_USER_PASSWORD ?? '');
+  await loginPage.login(process.env.TEST_USER_EMAIL ?? '', process.env.TEST_USER_PASSWORD ?? ''${login.code ? ', process.env.TEST_USER_TOTP_SECRET' : ''});
   await loginPage.expectSignedIn();
   await page.context().storageState({ path: 'test-data/.auth/user.json' });
 });
@@ -494,7 +631,7 @@ Then('the sign-in form is shown', async ({ loginPage }) => {
 
 // The test account comes from the environment (.env locally, secrets in CI), never the repo.
 When('I sign in with the test account', async ({ loginPage }) => {
-  await loginPage.login(process.env.TEST_USER_EMAIL ?? '', process.env.TEST_USER_PASSWORD ?? '');
+  await loginPage.login(process.env.TEST_USER_EMAIL ?? '', process.env.TEST_USER_PASSWORD ?? ''${login.code ? ', process.env.TEST_USER_TOTP_SECRET' : ''});
 });
 
 Then('I am signed in', async ({ loginPage }) => {
@@ -743,6 +880,7 @@ const USAGE = `Usage: npm run init -- --url <app origin> [--login [path]] [--api
 
   --url     where the application under test runs (BASE_URL overrides it later)
   --login   the application has a sign-in form, at this path (default: /)
+  --totp    the test account signs in with a one-time code (TEST_USER_TOTP_SECRET in .env)
   --api     a read-only API endpoint (a health or info URL): one anonymous GET, then a contract test
   --name    what to call it in features, requirements and reports
   --no-run  scaffold only; do not run the smoke suite afterwards
@@ -765,8 +903,16 @@ async function main() {
     process.exit(1);
   }
 
+  // The same check `npm test` runs first: an old Node or a missing browser becomes one clear
+  // instruction instead of Playwright's raw launch error. init is a customer's first command.
+  try {
+    execFileSync('node', [path.join(__dirname, 'preflight.js')], { stdio: 'inherit' });
+  } catch {
+    process.exit(1);
+  }
+
   console.log(`init: reading ${url}${opts.login !== undefined ? ` (sign-in form at ${opts.login})` : ''} …`);
-  const found = await probe(url, opts.login);
+  const found = await probe(url, opts.login, { totp: opts.totp });
   if (opts.api) {
     console.log(`init: reading ${opts.api} (one GET) …`);
     found.api = await probeApi(opts.api);
@@ -789,6 +935,14 @@ async function main() {
     for (const k of ['username', 'password', 'submit']) {
       console.log(
         `  ${found.login[k] ? '✓' : '✗'} ${k.padEnd(8)} ${found.login[k] || 'no rule-abiding locator — needs a data-testid (TODO in LoginPage)'}`,
+      );
+    }
+    const c = found.login.code;
+    if (c) {
+      console.log(
+        c.discovered
+          ? `  ${c.field ? '✓' : '✗'} code     ${c.field || 'no rule-abiding locator'}${c.signedIn ? ' (signed in with a generated code)' : ' (the code did NOT complete sign-in)'}`
+          : `  ⚠ code     not seen yet: label fallback in LoginPage${c.note ? ` (${c.note})` : ''}`,
       );
     }
     console.log('\n  Signed-in lanes switch on once TEST_USER_EMAIL and TEST_USER_PASSWORD are set in .env.');

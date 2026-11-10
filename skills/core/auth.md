@@ -214,6 +214,33 @@ Three habits keep a suite inside the budget:
 
 ---
 
+## 4c. One-time codes (an authenticator app)
+
+A test account that signs in with an authenticator app is automated from its **secret**: the
+base32 string shown when the authenticator was set up. Put it in `TEST_USER_TOTP_SECRET`
+(`.env` locally, a secret in CI) and the framework generates each code (`utils/totp.ts`,
+RFC 6238, pinned to the standard's test vectors). Whoever holds the secret can produce the
+account's codes, so use a dedicated test account and never commit it.
+
+```bash
+npm run init -- --url https://staging.your-app.com --login /sign-in --totp
+```
+
+With the credentials and the secret in `.env`, `init` signs in once on your test environment,
+finds the code field by the HTML standard `autocomplete="one-time-code"`, verifies a
+rule-abiding locator for it, and confirms the generated code completes sign-in. Without
+them, the generated `LoginPage` marks the code field `NOT YET SEEN` and uses a label match.
+
+**A code works once.** Identity providers reject a code that has already been used (the
+reference application answers "This totp passcode has already been used"), and a code only
+changes every 30 seconds. `unusedTotp()` claims each 30-second step once across every test
+worker, and init's probe uses the same register; when a step is taken, it waits for the next.
+So a run that signs in twice within 30 seconds spends up to 30 seconds waiting: one more
+reason to sign in once, in `setup`, and reuse the session.
+
+A test cannot answer a push notification, a hardware key or an SMS code. For those, capture a
+session by hand (section 5's expiry rules apply to it).
+
 ## 5. Auth state expiry
 
 Storage state files expire when session cookies expire. Signs of expiry:

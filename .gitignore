@@ -12,6 +12,7 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 test-data/.auth/*.json
+test-data/.auth/totp/
 
 # BDD generated specs
 .features-gen/
