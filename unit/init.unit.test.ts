@@ -113,6 +113,16 @@ describe('npm run init — the scaffold it writes', () => {
   });
 });
 
+describe('npm run init — the priorities it proposes', () => {
+  it('marks every priority it writes as proposed, so the customer confirms it', () => {
+    for (const files of [withLogin, noLogin]) {
+      const lines = files['requirements/SMOKE.md'].split('\n').filter((l: string) => l.startsWith('**Priority:**'));
+      expect(lines.length).toBeGreaterThan(0);
+      for (const l of lines) expect(l).toMatch(/<!-- proposed by npm run init: .+ -->/);
+    }
+  });
+});
+
 describe('npm run init --api — the API lane it writes', () => {
   const JSON_API = {
     origin: 'https://api.example.test',

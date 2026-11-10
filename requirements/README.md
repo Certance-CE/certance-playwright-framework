@@ -45,6 +45,18 @@ gate, the rest are reported. Rank by what the business loses when the behaviour 
 - **normal**: a convenience the person can reach another way;
 - **low**: a convenience the requirement does not fully define.
 
+Every priority says where it came from, in a comment after it:
+
+| Comment                                         | Meaning                                                                               | Who writes it        |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------- |
+| `<!-- source: … -->`                            | the specification stated it (a Jira priority, a "must have", a "shall")               | the extraction agent |
+| `<!-- proposed: … -->`                          | ranked by business impact; enforced as proposed, listed in the matrix until confirmed | the extraction agent |
+| `<!-- decided YYYY-MM-DD: … -->`, or no comment | a person set or confirmed it                                                          | a person             |
+
+`**Priority:** unset`, a missing priority, and a word the engine does not know (a typo) all
+gate as **critical**, and the matrix lists them under "needs a priority". Failing closed is
+the point: a priority nobody set must not quietly switch the gate off.
+
 ## Adding one
 
 1. Add a `## REQ-AREA-NNN — Title` heading with a `**Priority:**` line to the relevant

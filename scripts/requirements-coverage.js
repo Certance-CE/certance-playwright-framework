@@ -40,8 +40,21 @@ const STEPS_DIR = process.env.STEPS_DIR || path.join(FEATURES_DIR, 'step-definit
 const PAGES_DIR = process.env.PAGES_DIR || 'pages';
 const RESULTS_DIR = process.env.ALLURE_RESULTS_DIR || 'allure-results';
 const MATRIX_OUT = process.env.REQ_MATRIX_OUT || 'requirements-coverage.md';
-const SEV = { critical: 'critical', high: 'critical', normal: 'normal', low: 'minor' };
-const PRI_ORDER = { critical: 0, high: 1, normal: 2, low: 3 };
+const SEV = { critical: 'critical', high: 'critical', normal: 'normal', low: 'minor', unset: 'critical' };
+const PRI_ORDER = { unset: -1, critical: 0, high: 1, normal: 2, low: 3 };
+const PRIORITIES = ['critical', 'high', 'normal', 'low'];
+
+/**
+ * Where a priority came from, read from the comment after it (requirements/README.md):
+ *   source   — the specification stated it (a Jira priority, a PRD's "must have", a "shall")
+ *   proposed — an agent ranked it by business impact; a person has not confirmed it yet
+ *   decided  — a person set or confirmed it
+ * A priority line with no comment was written by a person, and counts as decided.
+ */
+function provenanceOf(line) {
+  const c = line.match(/<!--\s*(source|proposed|decided)\b/i);
+  return c ? c[1].toLowerCase() : 'decided';
+}
 const STATE_ICON = { covered: '✅', structural: '🟠', failing: '⚠️', pending: '🟡', gap: '❌' };
 
 // ── Assertion floor ──────────────────────────────────────────────────────────
@@ -86,7 +99,13 @@ function patternToTest(raw) {
     literal
       .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       .replace(/\\\{(?:string|word|int|float|bigint|double|)\\\}/g, (t) =>
-        /string/.test(t) ? '(?:"[^"]*"|\'[^\']*\')' : /int|bigint/.test(t) ? '-?\\d+' : /float|double/.test(t) ? '-?[\\d.]+' : '\\S+',
+        /string/.test(t)
+          ? '(?:"[^"]*"|\'[^\']*\')'
+          : /int|bigint/.test(t)
+            ? '-?\\d+'
+            : /float|double/.test(t)
+              ? '-?[\\d.]+'
+              : '\\S+',
       )
       .replace(/\\\{\\\}/g, '.*') +
     '$';
@@ -114,7 +133,8 @@ function walkFiles(dir) {
 // Step definitions in STEPS_DIR: [{ matcher, body }], comments stripped.
 function loadStepDefs(dir) {
   const defs = [];
-  const KW = /(?:Given|When|Then|And|But|Step|defineStep)\(\s*(\/[^/]+\/[a-z]*|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)/g;
+  const KW =
+    /(?:Given|When|Then|And|But|Step|defineStep)\(\s*(\/[^/]+\/[a-z]*|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)/g;
   for (const file of walkFiles(dir)) {
     const text = fs.readFileSync(file, 'utf8');
     const marks = [];
@@ -159,7 +179,8 @@ function loadPageMethods(dir) {
 // the caller reads as "cannot prove absence of assertion", never as structural.
 function boundBodies(scenarios, defs, pageMethods) {
   const bodies = new Set();
-  for (const sc of scenarios) for (const step of sc.steps) for (const d of defs) if (d.matcher(step)) bodies.add(d.body);
+  for (const sc of scenarios)
+    for (const step of sc.steps) for (const d of defs) if (d.matcher(step)) bodies.add(d.body);
   const called = new Set();
   for (const b of bodies) {
     let m;
@@ -189,16 +210,32 @@ function loadRequirements() {
     for (let i = 0; i < lines.length; i++) {
       const h = lines[i].match(/^##\s+(REQ-[A-Z0-9]+-\d+)\s*[—:-]\s*(.+)$/);
       if (!h) continue;
-      let priority = fm.priority || 'normal';
+      // Fail closed: a priority that is missing, `unset` or not a word this engine knows is
+      // `unset`, and `unset` gates as critical. Defaulting it to `normal` would let a typo
+      // ("hihg") or an agent's omission switch the gate off for that requirement, silently.
+      let raw = fm.priority;
+      let provenance = 'decided';
       for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
-        const p = lines[j].match(/\*\*Priority:\*\*\s*(\w+)/i);
+        const p = lines[j].match(/\*\*Priority:\*\*\s*([^\s<]+)/i);
         if (p) {
-          priority = p[1].toLowerCase();
+          raw = p[1];
+          provenance = provenanceOf(lines[j]);
           break;
         }
         if (/^##\s/.test(lines[j])) break;
       }
-      reqs.push({ id: h[1], title: h[2].trim(), priority, epic: fm.epic || file, journey: fm.journey || '' });
+      const word = String(raw || '').toLowerCase();
+      const priority = PRIORITIES.includes(word) ? word : 'unset';
+      if (priority === 'unset') provenance = 'unset';
+      reqs.push({
+        id: h[1],
+        title: h[2].trim(),
+        priority,
+        provenance,
+        raw: raw || '',
+        epic: fm.epic || file,
+        journey: fm.journey || '',
+      });
     }
   }
   return reqs;
@@ -228,7 +265,12 @@ function loadScenarios(dir) {
         tags = [];
       } else if (/^(Given|When|Then|And|But)\s+/.test(line) && cur) {
         cur.steps.push(line.replace(/^(Given|When|Then|And|But)\s+/, ''));
-      } else if (line && !line.startsWith('#') && !line.startsWith('|') && !/^(Feature|Background|Examples|Rule)/.test(line)) {
+      } else if (
+        line &&
+        !line.startsWith('#') &&
+        !line.startsWith('|') &&
+        !/^(Feature|Background|Examples|Rule)/.test(line)
+      ) {
         if (!cur) tags = []; // stray line before any scenario: tags do not carry over
       }
     }
@@ -352,25 +394,41 @@ function main() {
       (a.state === 'covered' ? 1 : 0) - (b.state === 'covered' ? 1 : 0) ||
       (PRI_ORDER[a.priority] ?? 9) - (PRI_ORDER[b.priority] ?? 9),
   );
+  const label = (r) => (r.provenance === 'decided' ? r.priority : `${r.priority} (${r.provenance})`);
   for (const r of ranked) {
-    md += `| \`${r.id}\` | ${r.title} | ${r.priority} | ${r.scenarios.map((s) => `"${s}"`).join('<br>') || '—'} | ${STATE_ICON[r.state]} ${r.state} |\n`;
+    md += `| \`${r.id}\` | ${r.title} | ${label(r)} | ${r.scenarios.map((s) => `"${s}"`).join('<br>') || '—'} | ${STATE_ICON[r.state]} ${r.state} |\n`;
+  }
+  // What still needs a person. An unset priority gates as critical until someone sets it; a
+  // proposed one is enforced as proposed, and listed so it is confirmed rather than forgotten.
+  const unset = rows.filter((r) => r.priority === 'unset');
+  const proposed = rows.filter((r) => r.provenance === 'proposed');
+  if (unset.length) {
+    md += `\n**Needs a priority (gated as critical until a person sets one):** ${unset
+      .map((r) => `\`${r.id}\`${r.raw ? ` (wrote "${r.raw}")` : ''}`)
+      .join(', ')}\n`;
+  }
+  if (proposed.length) {
+    md += `\n**Proposed by an agent, awaiting a person's confirmation:** ${proposed.map((r) => `\`${r.id}\``).join(', ')}\n`;
   }
   fs.writeFileSync(MATRIX_OUT, md);
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + '\n');
 
   console.log(`\nRequirement coverage: ${covered}/${total} (${pct}%)`);
   for (const r of ranked) {
-    console.log(`  ${STATE_ICON[r.state]} ${r.state.padEnd(10)} ${r.id} [${r.priority}] — ${r.title}`);
+    console.log(`  ${STATE_ICON[r.state]} ${r.state.padEnd(10)} ${r.id} [${label(r)}] — ${r.title}`);
   }
+  if (unset.length) console.log(`\n  Needs a priority (gated as critical): ${unset.map((r) => r.id).join(', ')}`);
+  if (proposed.length) console.log(`  Proposed, awaiting confirmation: ${proposed.map((r) => r.id).join(', ')}`);
   console.log(`\nMatrix written to ${MATRIX_OUT}`);
 
   // Gate: a critical/high requirement must be `covered` (passed AND asserting). A
   // gap, a failing test, a never-run (pending) or a green-but-empty (structural)
   // one all fail — muting a test can no longer sneak a requirement past the gate.
   if (process.env.REQ_FAIL_ON_GAP === '1') {
-    const bad = rows.filter((r) => (r.priority === 'critical' || r.priority === 'high') && r.state !== 'covered');
+    const gated = (r) => r.priority === 'critical' || r.priority === 'high' || r.priority === 'unset';
+    const bad = rows.filter((r) => gated(r) && r.state !== 'covered');
     if (bad.length) {
-      console.error(`\nrequirement gate: ${bad.length} critical/high requirement(s) not covered:`);
+      console.error(`\nrequirement gate: ${bad.length} critical/high/unset requirement(s) not covered:`);
       for (const r of bad) console.error(`  ${STATE_ICON[r.state]} ${r.state} ${r.id} — ${r.title}`);
       process.exit(1);
     }

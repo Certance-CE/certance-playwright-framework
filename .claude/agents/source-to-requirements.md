@@ -39,8 +39,17 @@ coverage matrix parses (`requirements/TASKS.md` is a worked example):
   single-behaviour (the "one test, one scenario" golden rule: one criterion, one scenario).
 
 **Priority is a business decision, and it decides what CI enforces:** the coverage gate fails
-a `critical` or `high` requirement that is not covered, and only reports the rest. Rank each
-requirement by **what the business loses when the behaviour breaks**, not by how prominently
+a `critical`, `high` or `unset` requirement that is not covered, and only reports the rest.
+What you write **depends on what the source gives you**, and every priority says where it came
+from, in a comment the coverage matrix reads:
+
+| The source…                                  | Examples                                                           | Write                                                                                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **states the priority**                      | a Jira priority field, a PRD's "must have", a regulation's "shall" | the priority it states, mapped to `critical / high / normal / low`, citing it: `**Priority:** high <!-- source: Jira priority "High" -->` |
+| **describes behaviour but does not rank it** | product documentation, a user guide, a help page                   | a proposal by business impact, with the reason: `**Priority:** critical <!-- proposed: data saved wrong silently -->`                     |
+| **has no business context**                  | an API reference, a technical specification, existing code         | `**Priority:** unset <!-- the source has no business context -->`                                                                         |
+
+Rank a proposal by **what the business loses when the behaviour breaks**, not by how prominently
 the source mentions it:
 
 | Priority   | When it breaks                                                                                                                       |
@@ -50,9 +59,9 @@ the source mentions it:
 | `normal`   | a convenience: the person can still reach the same result another way                                                                |
 | `low`      | a convenience the source does not fully define                                                                                       |
 
-Write the reason beside the priority as an HTML comment (`**Priority:** critical <!-- … -->`)
-so the reviewer sees it, and treat the ranking as a proposal: the person reviewing the file
-confirms or changes it before any scenario is written.
+You never write `decided`: that is the reviewer's word, when they confirm or change a
+priority. A proposal is enforced as proposed until then, and the matrix lists it as awaiting
+confirmation. An `unset` priority gates as critical until a person sets one.
 
 ### Grounding rules
 

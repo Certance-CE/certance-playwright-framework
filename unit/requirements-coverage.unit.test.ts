@@ -205,3 +205,70 @@ describe('requirements-coverage — coverage-engine defects and guards', () => {
     expect(row(matrix, 'REQ-PAY-001')).not.toContain('covered');
   });
 });
+
+/**
+ * Priority provenance and fail-closed gating (ADR-012). A priority says where it came from
+ * (source, proposed, decided), and one that is missing, `unset` or misspelt gates as critical.
+ * Before this, a missing priority defaulted to `normal` and a typo became a priority the gate
+ * never enforced: either way the gate switched itself off for that requirement, silently.
+ */
+const reqWith = (priorityLine: string, frontmatterPriority = '') =>
+  `---\nepic: Payments\njourney: pay\n${frontmatterPriority ? `priority: ${frontmatterPriority}\n` : ''}---\n\n# Payments\n\n## REQ-PAY-001 — Fees are calculated correctly\n\n${priorityLine}\n`;
+const gap = { features: { 'payments.feature': FEATURE('@regression') }, gate: true };
+
+describe('requirements-coverage — priority provenance, fail closed', () => {
+  it('a requirement with no priority anywhere is unset, and gates as critical', () => {
+    const { status, matrix } = run({ requirements: { 'p.md': reqWith('') }, ...gap });
+    expect(status).toBe(1);
+    expect(row(matrix, 'REQ-PAY-001')).toContain('unset');
+    expect(matrix).toContain('Needs a priority (gated as critical until a person sets one)');
+  });
+
+  it('a misspelt priority is unset, not a priority the gate ignores', () => {
+    const { status, matrix } = run({ requirements: { 'p.md': reqWith('**Priority:** hihg') }, ...gap });
+    expect(status).toBe(1);
+    expect(matrix).toContain('wrote "hihg"');
+  });
+
+  it('an explicit unset gates as critical', () => {
+    const line = '**Priority:** unset <!-- the source has no business context -->';
+    expect(run({ requirements: { 'p.md': reqWith(line) }, ...gap }).status).toBe(1);
+  });
+
+  it('an unset requirement that is covered passes: unset means "treat as critical", not "fail"', () => {
+    const { status } = run({
+      requirements: { 'p.md': reqWith('**Priority:** unset') },
+      features: { 'payments.feature': FEATURE() },
+      steps: { 'pay.steps.ts': STEPS_ASSERTING },
+      pages: { 'PayPage.ts': PAGE_ASSERTING },
+      results: [passed()],
+      gate: true,
+    });
+    expect(status).toBe(0);
+  });
+
+  it('a proposed priority is enforced as proposed, and listed for confirmation', () => {
+    const line = '**Priority:** critical <!-- proposed: data saved wrong silently -->';
+    const { status, matrix } = run({ requirements: { 'p.md': reqWith(line) }, ...gap });
+    expect(status).toBe(1);
+    expect(row(matrix, 'REQ-PAY-001')).toContain('critical (proposed)');
+    expect(matrix).toContain("awaiting a person's confirmation:** `REQ-PAY-001`");
+  });
+
+  it('a priority from the source is labelled as such', () => {
+    const line = '**Priority:** high <!-- source: Jira priority "High" -->';
+    expect(row(run({ requirements: { 'p.md': reqWith(line) }, ...gap }).matrix, 'REQ-PAY-001')).toContain(
+      'high (source)',
+    );
+  });
+
+  it('a person-written normal priority still only reports, as before', () => {
+    const { status, matrix } = run({ requirements: { 'p.md': reqWith('**Priority:** normal') }, ...gap });
+    expect(status).toBe(0);
+    expect(row(matrix, 'REQ-PAY-001')).toContain('| normal |');
+  });
+
+  it('the frontmatter default still applies to a requirement without its own line', () => {
+    expect(run({ requirements: { 'p.md': reqWith('', 'low') }, ...gap }).status).toBe(0);
+  });
+});
