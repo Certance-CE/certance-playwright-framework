@@ -169,6 +169,67 @@ describe('npm run init --totp — the one-time code step', () => {
   });
 });
 
+describe('npm run init --sso — sign-in through an identity provider', () => {
+  const SSO_LOGIN = {
+    path: '/login',
+    sso: "getByRole('button', { name: 'Test IdP', exact: true })",
+    idpOrigin: 'http://127.0.0.1:4568',
+    username: "getByRole('textbox', { name: 'Email or username', exact: true })",
+    next: "getByRole('button', { name: 'Next', exact: true })",
+    password: "getByLabel('Password', { exact: true })",
+    submit: "getByRole('button', { name: 'Sign in', exact: true })",
+    unresolved: [],
+    signedIn: true,
+  };
+  const seen = init.scaffold({ url: 'http://127.0.0.1:4569', name: 'SSO app', login: SSO_LOGIN });
+  const unseen = init.scaffold({
+    url: 'http://127.0.0.1:4569',
+    name: 'SSO app',
+    login: { ...SSO_LOGIN, password: undefined, submit: undefined, passwordStep: { discovered: false } },
+  });
+
+  it('passes the golden-rule lint, password page seen or not', async () => {
+    expect(await lintErrors(seen)).toEqual([]);
+    expect(await lintErrors(unseen)).toEqual([]);
+  });
+
+  it('clicks through to the provider, then signs in username first', () => {
+    const page = seen['pages/LoginPage.ts'];
+    expect(page).toContain("return this.page.getByRole('button', { name: 'Test IdP', exact: true });");
+    expect(page).toMatch(/await this\.goto\('\/login'\);\s+await this\.signInWithProvider\(\)\.click\(\);/);
+    expect(page).toMatch(
+      /await this\.username\(\)\.fill\(username\);\s+await this\.next\(\)\.click\(\);\s+await this\.password\(\)\.fill\(password\);/,
+    );
+  });
+
+  it('judges "signed in" by where the browser ends up, not by a missing password field', () => {
+    const page = seen['pages/LoginPage.ts'];
+    expect(page).toContain("url.origin !== 'http://127.0.0.1:4568' && !url.pathname.startsWith('/login')");
+    expect(page).not.toMatch(/expectSignedIn\(\) \{\s+await expect\(this\.password\(\)\)\.toHaveCount\(0/);
+  });
+
+  it('shows the first page as username plus the button that continues', () => {
+    expect(seen['pages/LoginPage.ts']).toMatch(
+      /expectFormShown\(\) \{\s+await expect\(this\.username\(\)\)\.toBeVisible\(\);[\s\S]*?await expect\(this\.next\(\)\)\.toBeVisible\(\);/,
+    );
+  });
+
+  it('marks a password page it could not reach, instead of presenting a guess as verified', () => {
+    const page = unseen['pages/LoginPage.ts'];
+    expect(page).toContain('NOT YET SEEN: the password page');
+    expect(page).toContain('getByLabel(/password/i)');
+    expect(page).not.toContain('TODO-password');
+  });
+
+  it('reads the --sso option', () => {
+    expect(
+      init.parseArgs(['--url', 'https://a.test', '--login', '/login', '--sso', 'Sign in with Okta']),
+    ).toMatchObject({
+      sso: 'Sign in with Okta',
+    });
+  });
+});
+
 describe('npm run init — never prints the test account', () => {
   it('removes the password, the authenticator secret and the API token from an error message', () => {
     const saved = { ...process.env };

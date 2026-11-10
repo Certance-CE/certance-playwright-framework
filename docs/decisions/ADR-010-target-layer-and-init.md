@@ -169,6 +169,24 @@ failed once in the sign-in page's performance scenario; nine further runs did no
 
 ---
 
+## Extension: single sign-on (2026-11-10)
+
+`--sso "<button or link name>"` follows the application's hand-over to an identity provider
+and reads the sign-in form there. A username-first form is recognised as two steps; with the
+test account in `.env`, `init` reaches the password page, verifies it and signs in once, and
+reports whether the whole path worked. Signed in, through a provider, is judged by the URL
+(back on the application, off its sign-in page), because a provider's error page has no
+password field and would pass the form-based check.
+
+Proven on a local test bed: a minimal OpenID Connect provider with a two-step sign-in, written
+for the purpose, and a Vikunja instance configured to use it. Without an account, `init`
+found the button by its full name from a partial one, followed it to the provider, verified
+the username step and marked the password page as not seen. With the account, it verified
+every step, signed in, and the smoke suite passed (18 of 18, 16 seconds from `init`). A wrong
+password made the generated sign-in check fail on the provider's page.
+
+---
+
 ## Review date
 
 Revisit after the first customer `init`, against what it actually took.

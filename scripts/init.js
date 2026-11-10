@@ -50,6 +50,7 @@ function parseArgs(argv) {
     else if (a === '--name') opts.name = next();
     else if (a === '--api') opts.api = next();
     else if (a === '--totp') opts.totp = true;
+    else if (a === '--sso') opts.sso = next();
     else if (a === '--no-run') opts.run = false;
     else if (a === '--force') opts.force = true;
     else if (a === '--help' || a === '-h') opts.help = true;
@@ -122,9 +123,11 @@ async function describe(handle) {
     const tag = el.tagName.toLowerCase();
     const type = (el.getAttribute('type') || '').toLowerCase();
     const isButton = tag === 'button' || ['submit', 'button'].includes(type);
-    const role = isButton ? 'button' : type === 'password' ? null : 'textbox';
+    const isLink = tag === 'a';
+    const role = isButton ? 'button' : isLink ? 'link' : type === 'password' ? null : 'textbox';
     // Accessible name, in the order Chromium computes it for these controls.
-    const name = isButton ? text(el.textContent) || text(el.getAttribute('value')) || label : label || placeholder;
+    const name =
+      isButton || isLink ? text(el.textContent) || text(el.getAttribute('value')) || label : label || placeholder;
     return { role, name, label, placeholder, testId: el.getAttribute('data-testid') || '' };
   });
 }
@@ -146,7 +149,7 @@ async function submitButton(form) {
   return visible.length ? visible[visible.length - 1].b : null;
 }
 
-async function probe(url, loginPath, { totp: wantsTotp = false } = {}) {
+async function probe(url, loginPath, { totp: wantsTotp = false, sso } = {}) {
   const { chromium } = require('@playwright/test');
   const browser = await chromium.launch();
   try {
@@ -158,34 +161,96 @@ async function probe(url, loginPath, { totp: wantsTotp = false } = {}) {
     if (await h.count()) result.heading = ((await h.textContent()) || '').replace(/\s+/g, ' ').trim();
     if (loginPath === undefined) return result;
 
-    // The sign-in form: the password field, the text field before it, and its submit.
-    const password = await page.$('input[type="password"]');
-    if (!password) throw new Error(`no password field on ${new URL(loginPath, url)} — is --login the sign-in page?`);
-    const form = await password.evaluateHandle((el) => el.form || el.closest('form') || el.ownerDocument.body);
-    const user = await form.asElement().$('input:not([type]), input[type="text"], input[type="email"]');
-    const submit = await submitButton(form.asElement());
-    if (!user || !submit)
-      throw new Error('found a password field, but not the username field or submit button beside it');
-
     const login = { path: loginPath, unresolved: [] };
-    for (const [key, handle] of [
-      ['username', user],
-      ['password', password],
-      ['submit', submit],
-    ]) {
+    const env = process.env;
+    const haveAccount = Boolean(env.TEST_USER_EMAIL && env.TEST_USER_PASSWORD);
+    const appOrigin = new URL(url).origin;
+    const record = async (key, handle) => {
       const info = await describe(handle);
       login[key] = await verified(page, handle, info);
       if (!login[key]) login.unresolved.push({ key, info });
+    };
+
+    // Single sign-on: the application's page hands over to an identity provider. Follow it,
+    // and read the sign-in form on whatever origin the provider serves it from.
+    if (sso) {
+      // Exact name first; then a unique partial match, because people type what they see and a
+      // button reads "Log in with Okta" where they typed "Okta". The locator written is the
+      // button's full, verified name either way.
+      const byName = (exact) =>
+        page.getByRole('button', { name: sso, exact }).or(page.getByRole('link', { name: sso, exact }));
+      let entry = byName(true);
+      if ((await entry.count()) !== 1) entry = byName(false);
+      const found = await entry.count();
+      if (found !== 1) {
+        throw new Error(
+          `${found ? `${found} buttons or links` : 'no button or link'} named like "${sso}" on ${new URL(loginPath, url)}`,
+        );
+      }
+      const handle = await entry.elementHandle();
+      await record('sso', handle);
+      await handle.click();
+      await page.waitForURL((u) => u.origin !== appOrigin, { timeout: 15_000 }).catch(() => {});
+      await page.waitForLoadState('domcontentloaded');
+      if (new URL(page.url()).origin !== appOrigin) login.idpOrigin = new URL(page.url()).origin;
     }
-    // The one-time code step. It only appears after a correct password, so it can only be seen
-    // by signing in, and only with the account the customer set up for tests: credentials and
-    // its authenticator secret in .env. Without them, LoginPage gets a marked fallback.
-    const env = process.env;
-    if (env.TEST_USER_EMAIL && env.TEST_USER_PASSWORD && env.TEST_USER_TOTP_SECRET) {
-      login.code = await discoverCodeStep(page, { user, password, submit }, env);
-    } else if (wantsTotp) {
-      login.code = { discovered: false };
+
+    const visiblePassword = () => page.$('input[type="password"]:visible');
+    let password = await visiblePassword();
+    let user;
+    let submit;
+    if (password) {
+      // One page: the password field, the text field before it, and its submit.
+      const form = await password.evaluateHandle((el) => el.form || el.closest('form') || el.ownerDocument.body);
+      user = await form.asElement().$('input:not([type]), input[type="text"], input[type="email"]');
+      submit = await submitButton(form.asElement());
+      if (!user || !submit)
+        throw new Error('found a password field, but not the username field or submit button beside it');
+      for (const [key, handle] of [
+        ['username', user],
+        ['password', password],
+        ['submit', submit],
+      ])
+        await record(key, handle);
+    } else {
+      // Username first (the shape Okta and Entra ID use): a username or email field and a
+      // button; the password field only exists on the next page, so it can only be read by
+      // continuing with the customer's test account.
+      user = await page.$(
+        'input[autocomplete="username"], input[autocomplete="email"], input[type="email"], input[type="text"]:visible',
+      );
+      if (!user) throw new Error(`no sign-in form on ${page.url()}: no password field, and no username field`);
+      const form = await user.evaluateHandle((el) => el.form || el.closest('form') || el.ownerDocument.body);
+      const next = await submitButton(form.asElement());
+      if (!next) throw new Error('found a username field, but no button to continue with');
+      await record('username', user);
+      await record('next', next);
+      if (haveAccount) {
+        await user.fill(env.TEST_USER_EMAIL);
+        await next.click();
+        password = await page
+          .waitForSelector('input[type="password"]', { state: 'visible', timeout: 15_000 })
+          .catch(() => null);
+        if (!password) throw new Error('continued with the test account, but no password field followed');
+        const form2 = await password.evaluateHandle((el) => el.form || el.closest('form') || el.ownerDocument.body);
+        submit = await submitButton(form2.asElement());
+        await record('password', password);
+        if (submit) await record('submit', submit);
+      } else {
+        login.passwordStep = { discovered: false };
+      }
     }
+
+    // With the customer's test account, finish signing in once, so the generated LoginPage is
+    // proven end to end: the one-time code step (if any) and the way back to the application.
+    if (haveAccount && password && submit) {
+      if (user && !login.next) await user.fill(env.TEST_USER_EMAIL);
+      await password.fill(env.TEST_USER_PASSWORD);
+      await submit.click();
+      if (env.TEST_USER_TOTP_SECRET) login.code = await discoverCodeStep(page, env);
+      login.signedIn = await signedInAfter(page, { appOrigin, loginPath, sso: Boolean(sso) });
+    }
+    if (!login.code && wantsTotp) login.code = { discovered: false };
     result.login = login;
     return result;
   } finally {
@@ -259,11 +324,8 @@ function schemaFor(value, depth = 0, indent = '') {
  * authenticator-friendly sign-in pages use). Returns verified locators for the field and
  * the button that submits it, and whether the code actually signed the account in.
  */
-async function discoverCodeStep(page, { user, password, submit }, env) {
+async function discoverCodeStep(page, env) {
   const { totp } = loadTotp();
-  await user.fill(env.TEST_USER_EMAIL);
-  await password.fill(env.TEST_USER_PASSWORD);
-  await submit.click();
   const field = await page
     .waitForSelector('input[autocomplete="one-time-code"]', { timeout: 15_000 })
     .catch(() => null);
@@ -276,12 +338,22 @@ async function discoverCodeStep(page, { user, password, submit }, env) {
   // first sign-in, seconds later, would reuse this code and be rejected (measured).
   await field.fill(await claimUnusedCode(env.TEST_USER_TOTP_SECRET, totp));
   if (confirm) await confirm.click();
-  // Signed in means the password field has gone, the same test the generated LoginPage uses.
-  code.signedIn = await page
-    .waitForFunction(() => !globalThis.document.querySelector('input[type="password"]'), null, { timeout: 15_000 })
-    .then(() => true)
-    .catch(() => false);
   return code;
+}
+
+/**
+ * Whether the sign-in just submitted worked. Through an identity provider: back on the
+ * application, off its sign-in page. A form on the application itself: its password field
+ * has gone. (An identity provider's error page has no password field either, which is why
+ * SSO is judged by where the browser ends up.)
+ */
+async function signedInAfter(page, { appOrigin, loginPath, sso }) {
+  const check = sso
+    ? page.waitForURL((u) => u.origin === appOrigin && !u.pathname.startsWith(loginPath), { timeout: 20_000 })
+    : page.waitForFunction(() => !globalThis.document.querySelector('input[type="password"]'), null, {
+        timeout: 15_000,
+      });
+  return check.then(() => true).catch(() => false);
 }
 
 /**
@@ -497,6 +569,14 @@ ${pages.map(([c, f]) => `  ${f}: async ({ page }, use) => {\n    await use(new $
       ? `this.page.${code.field}`
       : `this.page.getByLabel(/one-time|two.?factor|verification code|authentication code|security code/i)`;
     const codeSubmit = code?.submit ? `this.page.${code.submit}` : 'this.submit()';
+    // A username-first sign-in whose password page init could not reach (no test account in
+    // .env): marked fallbacks, never presented as verified.
+    const unseenPassword = Boolean(login.passwordStep && !login.passwordStep.discovered);
+    const passwordLoc = unseenPassword ? 'this.page.getByLabel(/password/i)' : loc('password');
+    const submitLoc = unseenPassword
+      ? "this.page.getByRole('button', { name: /sign in|log ?in|continue|submit/i })"
+      : loc('submit');
+    const viaSso = Boolean(login.sso);
     files['pages/LoginPage.ts'] = `import { expect } from '@playwright/test';
 import { BasePage } from './BasePage';${code ? "\nimport { unusedTotp } from '../utils/totp';" : ''}
 
@@ -505,22 +585,50 @@ import { BasePage } from './BasePage';${code ? "\nimport { unusedTotp } from '..
  *
  * Generated by \`npm run init\` from the live page: each locator below was verified to
  * resolve to exactly one element, in golden-rule order (role, label, placeholder, test id).${
+   viaSso
+     ? `\n *\n * Sign-in is single sign-on: the application hands over to an identity provider${
+         login.idpOrigin ? ` (${login.idpOrigin})` : ''
+       }, and the\n * form below is the provider's.`
+     : ''
+ }${
+   unseenPassword
+     ? `\n *\n * NOT YET SEEN: the password page. It only appears after a username, so init could not read\n * it without a test account; password() and submit() are label matches. Run init again with\n * TEST_USER_EMAIL and TEST_USER_PASSWORD in .env to verify them.`
+     : ''
+ }${
    login.unresolved.length
      ? `\n *\n * ${login.unresolved.map((u) => u.key).join(', ')}: no accessible name and no data-testid, so no rule-abiding\n * locator exists yet. Ask for a data-testid on the control and replace the TODO test id.`
      : ''
  }
  */
-export class LoginPage extends BasePage {
+export class LoginPage extends BasePage {${
+      viaSso
+        ? `
+  /** The application's button that hands over to the identity provider. */
+  private signInWithProvider() {
+    return ${loc('sso')};
+  }
+`
+        : ''
+    }
   private username() {
     return ${loc('username')};
   }
-
+${
+  login.next
+    ? `
+  /** Username first: this button leads to the password page. */
+  private next() {
+    return ${loc('next')};
+  }
+`
+    : ''
+}
   private password() {
-    return ${loc('password')};
+    return ${passwordLoc};
   }
 
   private submit() {
-    return ${loc('submit')};
+    return ${submitLoc};
   }
 ${
   code
@@ -543,12 +651,12 @@ ${
     : ''
 }
   async open() {
-    await this.goto(${lit(login.path)});
+    await this.goto(${lit(login.path)});${viaSso ? '\n    await this.signInWithProvider().click();' : ''}
   }
 
   async login(username: string, password: string${code ? ', totpSecret?: string' : ''}) {
     await this.open();
-    await this.username().fill(username);
+    await this.username().fill(username);${login.next ? '\n    await this.next().click();' : ''}
     await this.password().fill(password);
     await this.submit().click();${
       code
@@ -566,19 +674,41 @@ ${
   }
 
   async expectFormShown() {
-    await expect(this.username()).toBeVisible();
+    await expect(this.username()).toBeVisible();${
+      login.next
+        ? `
+    // Username first: the password field is on the next page, so the first page shows the
+    // username and the button that continues.
+    await expect(this.next()).toBeVisible();`
+        : `
     await expect(this.password()).toBeVisible();
-    await expect(this.submit()).toBeVisible();
+    await expect(this.submit()).toBeVisible();`
+    }
   }
 
-  /**
+${
+  viaSso
+    ? `  /**
+   * Signed in means back on the application, off its sign-in page. Through an identity
+   * provider, "the password field has gone" is not enough: the provider's own error page has
+   * no password field either. Replace this with something only a signed-in user sees as soon
+   * as you know what that is.
+   */
+  async expectSignedIn() {
+    await expect(this.page).toHaveURL(
+      (url) => ${login.idpOrigin ? `url.origin !== ${lit(login.idpOrigin)} && ` : ''}!url.pathname.startsWith(${lit(login.path)}),
+      { timeout: 30_000 },
+    );
+  }`
+    : `  /**
    * Signed in means the sign-in form has gone. That is true of every application, which
    * is why init can generate it; replace it with something only a signed-in user sees
    * (a heading, the account menu) as soon as you know what that is.
    */
   async expectSignedIn() {
     await expect(this.password()).toHaveCount(0, { timeout: 30_000 });
-  }
+  }`
+}
 }
 `;
     files['tests/auth.setup.ts'] = `import { test as setup } from '@playwright/test';
@@ -883,6 +1013,7 @@ const USAGE = `Usage: npm run init -- --url <app origin> [--login [path]] [--api
   --url     where the application under test runs (BASE_URL overrides it later)
   --login   the application has a sign-in form, at this path (default: /)
   --totp    the test account signs in with a one-time code (TEST_USER_TOTP_SECRET in .env)
+  --sso     the name of the button or link that signs in through an identity provider
   --api     a read-only API endpoint (a health or info URL): one anonymous GET, then a contract test
   --name    what to call it in features, requirements and reports
   --no-run  scaffold only; do not run the smoke suite afterwards
@@ -914,7 +1045,7 @@ async function main() {
   }
 
   console.log(`init: reading ${url}${opts.login !== undefined ? ` (sign-in form at ${opts.login})` : ''} …`);
-  const found = await probe(url, opts.login, { totp: opts.totp });
+  const found = await probe(url, opts.login, { totp: opts.totp, sso: opts.sso });
   if (opts.api) {
     console.log(`init: reading ${opts.api} (one GET) …`);
     found.api = await probeApi(opts.api);
@@ -934,7 +1065,13 @@ async function main() {
   console.log(`\n✓ ${name} is the application under test. Removed the reference target; wrote:`);
   for (const rel of Object.keys(files)) console.log(`    ${rel}`);
   if (found.login) {
-    for (const k of ['username', 'password', 'submit']) {
+    if (found.login.sso)
+      console.log(`  ✓ sso      ${found.login.sso}${found.login.idpOrigin ? ` → ${found.login.idpOrigin}` : ''}`);
+    for (const k of ['username', ...(found.login.next ? ['next'] : []), 'password', 'submit']) {
+      if (found.login.passwordStep && !found.login.passwordStep.discovered && (k === 'password' || k === 'submit')) {
+        console.log(`  ⚠ ${k.padEnd(8)} not seen yet (password page needs the test account in .env)`);
+        continue;
+      }
       console.log(
         `  ${found.login[k] ? '✓' : '✗'} ${k.padEnd(8)} ${found.login[k] || 'no rule-abiding locator — needs a data-testid (TODO in LoginPage)'}`,
       );
@@ -943,8 +1080,15 @@ async function main() {
     if (c) {
       console.log(
         c.discovered
-          ? `  ${c.field ? '✓' : '✗'} code     ${c.field || 'no rule-abiding locator'}${c.signedIn ? ' (signed in with a generated code)' : ' (the code did NOT complete sign-in)'}`
+          ? `  ${c.field ? '✓' : '✗'} code     ${c.field || 'no rule-abiding locator'}`
           : `  ⚠ code     not seen yet: label fallback in LoginPage${c.note ? ` (${c.note})` : ''}`,
+      );
+    }
+    if (found.login.signedIn !== undefined) {
+      console.log(
+        found.login.signedIn
+          ? '  ✓ signed in with the test account, through every step above'
+          : '  ✗ the test account did NOT complete sign-in: check the account, or the steps above',
       );
     }
     console.log('\n  Signed-in lanes switch on once TEST_USER_EMAIL and TEST_USER_PASSWORD are set in .env.');
