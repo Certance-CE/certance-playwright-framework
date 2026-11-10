@@ -31,6 +31,12 @@ const { proxyFromEnv } = require('./lib/network');
 
 const ROOT = path.join(__dirname, '..');
 
+// Pipelines for platforms other than GitHub Actions: template → where the platform looks.
+const CI_TEMPLATES = {
+  azure: { from: 'ci/azure-pipelines.yml', to: 'azure-pipelines.yml' },
+  gitlab: { from: 'ci/gitlab-ci.yml', to: '.gitlab-ci.yml' },
+};
+
 // The test account lives in .env, as for the suite; without this the probe cannot see it.
 try {
   require('dotenv').config({ path: path.join(ROOT, '.env'), quiet: true });
@@ -52,7 +58,11 @@ function parseArgs(argv) {
     else if (a === '--api') opts.api = next();
     else if (a === '--totp') opts.totp = true;
     else if (a === '--sso') opts.sso = next();
-    else if (a === '--no-run') opts.run = false;
+    else if (a === '--ci') {
+      opts.ci = next();
+      if (!CI_TEMPLATES[opts.ci])
+        throw new Error(`--ci takes ${Object.keys(CI_TEMPLATES).join(' or ')}, not "${opts.ci}"`);
+    } else if (a === '--no-run') opts.run = false;
     else if (a === '--force') opts.force = true;
     else if (a === '--help' || a === '-h') opts.help = true;
     else throw new Error(`unknown option ${a}`);
@@ -1048,6 +1058,7 @@ const USAGE = `Usage: npm run init -- --url <app origin> [--login [path]] [--api
   --login   the application has a sign-in form, at this path (default: /)
   --totp    the test account signs in with a one-time code (TEST_USER_TOTP_SECRET in .env)
   --sso     the name of the button or link that signs in through an identity provider
+  --ci      azure or gitlab: also write that platform's pipeline (GitHub Actions is already set up)
   --api     a read-only API endpoint (a health or info URL): one anonymous GET, then a contract test
   --name    what to call it in features, requirements and reports
   --no-run  scaffold only; do not run the smoke suite afterwards
@@ -1096,6 +1107,18 @@ async function main() {
     /* formatting is a courtesy; lint will say if anything matters */
   }
 
+  // Another CI platform's pipeline, from its template. Never over a pipeline already there.
+  let ciNote = '';
+  if (opts.ci) {
+    const { from, to } = CI_TEMPLATES[opts.ci];
+    if (fs.existsSync(path.join(ROOT, to)))
+      ciNote = `  ⚠ ${to} already exists; left it alone (the template is ${from})`;
+    else {
+      fs.copyFileSync(path.join(ROOT, from), path.join(ROOT, to));
+      ciNote = `  ✓ ${to} written from ${from}: add the sign-in secrets it names, then push`;
+    }
+  }
+
   console.log(`\n✓ ${name} is the application under test. Removed the reference target; wrote:`);
   for (const rel of Object.keys(files)) console.log(`    ${rel}`);
   if (found.login) {
@@ -1133,6 +1156,8 @@ async function main() {
       `  ✓ api      GET ${found.api.path} → ${found.api.status} ${found.api.contentType}${fields ? `, ${fields} field(s) in the contract` : ''}`,
     );
   }
+
+  if (ciNote) console.log(`\n${ciNote}`);
 
   if (!opts.run) return;
   console.log('\ninit: running the smoke suite …\n');

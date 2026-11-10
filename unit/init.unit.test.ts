@@ -222,6 +222,12 @@ describe('npm run init --sso — sign-in through an identity provider', () => {
     expect(page).not.toContain('TODO-password');
   });
 
+  it('reads --ci for the two platforms it has templates for, and rejects anything else', () => {
+    expect(init.parseArgs(['--url', 'https://a.test', '--ci', 'azure'])).toMatchObject({ ci: 'azure' });
+    expect(init.parseArgs(['--url', 'https://a.test', '--ci', 'gitlab'])).toMatchObject({ ci: 'gitlab' });
+    expect(() => init.parseArgs(['--url', 'https://a.test', '--ci', 'jenkins'])).toThrow(/--ci takes azure or gitlab/);
+  });
+
   it('reads the --sso option', () => {
     expect(
       init.parseArgs(['--url', 'https://a.test', '--login', '/login', '--sso', 'Sign in with Okta']),

@@ -1,0 +1,89 @@
+# Certance Lens on GitLab CI. Copy this file to `.gitlab-ci.yml` at the repository root
+# (or run `npm run init -- … --ci gitlab`).
+#
+# It mirrors .github/workflows/playwright.yml: the same gates, through the same npm scripts, so
+# what passes on GitHub passes here. unit/ci-templates.unit.test.ts fails if the two drift
+# apart. This template has not been run on GitLab by Certance; the GitHub workflow it mirrors
+# runs on every pull request.
+#
+# Sign-in, when the application needs it: add CI/CD variables (masked) for the secrets you use:
+# TEST_USER_EMAIL, TEST_USER_PASSWORD, TEST_USER_TOTP_SECRET, or STORAGE_STATE_BASE64 from
+# `npm run auth:capture`. GitLab passes them to every job as environment variables, and one you
+# do not define is simply absent, so nothing here needs editing.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+image: node:24
+
+variables:
+  CI: 'true'
+  npm_config_cache: '$CI_PROJECT_DIR/.npm'
+
+cache:
+  key: npm
+  paths:
+    - .npm/
+
+stages:
+  - checks
+  - suite
+
+lint:
+  stage: checks
+  script:
+    - npm ci
+    - npm run lint
+    - npm run typecheck
+    - npm run check:docs
+    - npm run agents:sync
+
+unit:
+  stage: checks
+  variables:
+    GIT_DEPTH: '0' # the integrity gate reads the merge request's diff
+  script:
+    - npm ci
+    - if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then GOVERNED_SKIP_BASE="$CI_MERGE_REQUEST_DIFF_BASE_SHA" npm run gate:skips; fi
+    - npm run test:unit
+    - npm run test:mutation
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - reports/mutation/
+
+suite:
+  stage: suite
+  needs: []
+  cache:
+    - key: npm
+      paths:
+        - .npm/
+    - key: allure-history-$CI_COMMIT_REF_SLUG
+      fallback_keys:
+        - allure-history-$CI_DEFAULT_BRANCH
+      paths:
+        - allure-history/
+      when: always
+  script:
+    - npm ci
+    - npx playwright install --with-deps chromium
+    - npm run setup:app
+    - npm test
+  after_script:
+    - npm run ctrf:summary
+    - npm run perf:summary
+    - npm run coverage:requirements
+    - npm run report
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - allure-report/index.html
+      - playwright-report/
+      - performance-report.md
+      - perf-results/
+      - requirements-coverage.md

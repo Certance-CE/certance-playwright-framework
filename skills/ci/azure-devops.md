@@ -1,92 +1,56 @@
-# Azure DevOps Pipeline
+# Azure DevOps Pipelines
 
-Load this guide when: setting up the Playwright suite in an Azure DevOps
-(ADO) environment.
+Load this guide when: running the suite on Azure DevOps.
 
----
-
-## Pipeline YAML — smoke tests on PR
-
-```yaml
-# azure-pipelines.yml
-trigger:
-  branches:
-    include: [main, develop]
-
-pr:
-  branches:
-    include: [main, develop]
-
-pool:
-  vmImage: ubuntu-latest
-
-container:
-  image: mcr.microsoft.com/playwright:v1.52.0-noble
-  options: --user 1001
-
-variables:
-  BASE_URL: $(BASE_URL)
-  TEST_USER_EMAIL: $(TEST_USER_EMAIL)
-  TEST_USER_PASSWORD: $(TEST_USER_PASSWORD)
-  APP_LIST_URL: $(APP_LIST_URL)
-  CI: 'true'
-
-steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '20.x'
-
-  - script: npm ci
-    displayName: Install dependencies
-
-  - script: npm run test:seed
-    displayName: Seed auth state
-
-  - script: npm run bdd:gen
-    displayName: Generate BDD specs
-
-  - script: npx playwright test --project=bdd:chromium --grep @smoke
-    displayName: Run smoke tests
-
-  - task: PublishTestResults@2
-    condition: always()
-    inputs:
-      testResultsFormat: JUnit
-      testResultsFiles: test-results/results.xml
-
-  - task: PublishPipelineArtifact@1
-    condition: always()
-    inputs:
-      targetPath: playwright-report
-      artifact: playwright-report
-```
+> Status: **a template. Certance has not yet run it on Azure DevOps.** `ci/azure-pipelines.yml`
+> mirrors `.github/workflows/playwright.yml`, which runs on every pull request, and
+> `unit/ci-templates.unit.test.ts` fails if the two drift apart: same gates, same npm scripts.
 
 ---
 
-## Adding secrets (ADO Variable Groups)
-
-1. Go to **Pipelines → Library → Variable groups**
-2. Create a variable group named `playwright-e2e-secrets`
-3. Add variables: `BASE_URL`, `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`, `APP_LIST_URL`
-4. Mark sensitive variables as **Secret**
-5. Link the variable group to your pipeline
-
----
-
-## JUnit reporter for ADO test results
-
-Add to `playwright.config.ts` reporters:
-
-```typescript
-reporter: [
-  ['html'],
-  ['json', { outputFile: 'test-results/results.json' }],
-  ['junit', { outputFile: 'test-results/results.xml' }],  // ADO integration
-],
-```
-
-Install the JUnit reporter:
+## Set it up
 
 ```bash
-npm install --save-dev playwright-junit-reporter
+npm run init -- --url https://staging.your-app.com --login /login --ci azure
 ```
+
+writes `azure-pipelines.yml` at the repository root from `ci/azure-pipelines.yml` (never over
+an existing one). Or copy the file by hand. Then, in Azure DevOps, create a pipeline from it.
+
+Two stages, as on GitHub:
+
+- **checks**: lint, typecheck, docs, agent drift; then the integrity gate (pull requests),
+  unit tests and mutation testing;
+- **suite**: the suite, then the test summary, performance budgets, requirement traceability
+  and the quality report (one HTML file, with its trend carried in the pipeline cache),
+  published as the `quality-report` artifact even when tests fail.
+
+## Sign-in secrets
+
+**Pipelines → Library → Variable groups**: create one named `certance-lens` with the secrets
+the application needs, marked **Secret**: `TEST_USER_EMAIL` and `TEST_USER_PASSWORD`
+(optionally `TEST_USER_TOTP_SECRET`), or `STORAGE_STATE_BASE64` from `npm run auth:capture`.
+Allow the pipeline to use the group.
+
+Azure exposes a secret to a script only through an explicit `env:` mapping, and it leaves an
+undefined `$(NAME)` as literal text, which is not empty. So in the template's `npm test` step,
+**delete the `env:` lines for any secret you did not define**, or the suite will believe a
+test account exists. An application with no sign-in needs neither the group nor the mapping.
+
+## Test results in the Tests tab
+
+Playwright's built-in JUnit reporter is enough; no extra package. Add it for Azure only:
+
+```typescript
+// playwright.config.ts → reporter
+...(process.env.TF_BUILD ? [['junit', { outputFile: 'test-results/junit.xml' }] as const] : []),
+```
+
+and publish it after the suite with `PublishTestResults@2` (`testResultsFiles:
+test-results/junit.xml`, `condition: always()`). The quality report remains the place a
+customer reads; the Tests tab is for the engineers on Azure.
+
+## Behind a corporate proxy
+
+Self-hosted agents inside a corporate network: see `docs/CORPORATE_NETWORK.md`. Set the proxy
+variables in the variable group, and put the test environment in `NO_PROXY`.
