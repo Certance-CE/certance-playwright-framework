@@ -571,7 +571,7 @@ ${
     ? `
 ## REQ-SMOKE-001 — A visitor is shown the sign-in form
 
-**Priority:** critical
+**Priority:** critical <!-- proposed by npm run init: a visitor blocked from signing in is blocked from everything -->
 
 The sign-in page loads and offers a username field, a password field and a way to submit.
 
@@ -579,7 +579,7 @@ The sign-in page loads and offers a username field, a password field and a way t
 
 ## REQ-SMOKE-002 — A user can sign in
 
-**Priority:** critical
+**Priority:** critical <!-- proposed by npm run init: signing in is the core journey -->
 
 A valid test account signs in and leaves the sign-in form. Runs once TEST_USER_EMAIL and
 TEST_USER_PASSWORD are set; until then this requirement reports as not covered.
@@ -588,7 +588,7 @@ TEST_USER_PASSWORD are set; until then this requirement reports as not covered.
 
 ## REQ-SMOKE-003 — The sign-in page loads within its performance budget
 
-**Priority:** normal
+**Priority:** normal <!-- proposed by npm run init: a slow page is still usable; tighten once you know your target -->
 
 The sign-in page meets the Core Web Vitals "good" thresholds, measured in a real browser: LCP ≤ 2.5 s,
 CLS ≤ 0.1, TTFB ≤ 800 ms. Tighten the budget in the scenario once you know your own target.
@@ -598,7 +598,7 @@ CLS ≤ 0.1, TTFB ≤ 800 ms. Tighten the budget in the scenario once you know y
     : `
 ## REQ-SMOKE-001 — The application loads
 
-**Priority:** critical
+**Priority:** critical <!-- proposed by npm run init: if the application does not load, nothing else works -->
 
 The landing page loads and shows what a user expects to see first.
 
@@ -606,7 +606,7 @@ The landing page loads and shows what a user expects to see first.
 
 ## REQ-SMOKE-002 — The application loads within its performance budget
 
-**Priority:** normal
+**Priority:** normal <!-- proposed by npm run init: a slow page is still usable; tighten once you know your target -->
 
 The landing page meets the Core Web Vitals "good" thresholds, measured in a real browser: LCP ≤ 2.5 s,
 CLS ≤ 0.1, TTFB ≤ 800 ms. Tighten the budget in the scenario once you know your own target.
@@ -679,7 +679,7 @@ browser, in seconds; add a requirement here for every endpoint the product depen
 
 ## REQ-API-001 — ${api.path} answers with its contract
 
-**Priority:** critical
+**Priority:** critical <!-- proposed by npm run init: the API answering with its contract is what callers rely on -->
 
 \`GET ${api.path}\` answers ${api.status}${
       contract

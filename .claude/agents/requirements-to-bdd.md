@@ -44,7 +44,8 @@ subagents beside it are Playwright's own, and write the code afterwards.
 2. One scenario per acceptance criterion — never merge criteria into one scenario.
 3. Keep steps declarative and business-readable.
 4. Map each requirement's own `**Priority:**` → severity: `critical → @smoke`; `high` /
-   `normal` / `low → @regression`.
+   `normal` / `low → @regression`. An `unset` priority gates as critical, so it maps to
+   `@smoke` too, with a `# TODO: priority unset` comment so the reviewer sees why.
 5. **Do not invent requirements.** If a criterion is ambiguous, emit the scenario with a
    `# TODO:` comment and an `@wip` tag rather than guessing.
 6. **Reuse existing step phrasing** where `features/step-definitions/` already has a

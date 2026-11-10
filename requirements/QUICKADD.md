@@ -26,7 +26,7 @@ behaviour is essential, so every requirement carries the default priority and a
 
 ## REQ-QUICKADD-001 — A label can be added by typing it into the title
 
-**Priority:** high <!-- critical scenario: if this breaks, the task is saved but filed or flagged wrong -->
+**Priority:** high <!-- decided 2026-11-03 (reference demo review): critical scenario: if this breaks, the task is saved but filed or flagged wrong -->
 
 As a person adding a task, I want to type `*label` in the title so the task is
 labelled without editing it afterwards.
@@ -39,7 +39,7 @@ labelled without editing it afterwards.
 
 ## REQ-QUICKADD-002 — A task can be assigned by typing a username into the title
 
-**Priority:** normal <!-- convenience: if this breaks, the user can still do it by hand -->
+**Priority:** normal <!-- decided 2026-11-03 (reference demo review): convenience: if this breaks, the user can still do it by hand -->
 
 As a person adding a task, I want to type `@username` in the title so the task is
 assigned to that person when it is created.
@@ -51,7 +51,7 @@ assigned to that person when it is created.
 
 ## REQ-QUICKADD-003 — A task can be placed in a project by typing its name into the title
 
-**Priority:** high <!-- critical scenario: if this breaks, the task is saved but filed or flagged wrong -->
+**Priority:** high <!-- decided 2026-11-03 (reference demo review): critical scenario: if this breaks, the task is saved but filed or flagged wrong -->
 
 As a person adding a task, I want to type `+Project` in the title so the task lands
 in that project instead of the current one.
@@ -63,7 +63,7 @@ in that project instead of the current one.
 
 ## REQ-QUICKADD-004 — A priority can be set by typing it into the title
 
-**Priority:** high <!-- critical scenario: if this breaks, the task is saved but filed or flagged wrong -->
+**Priority:** high <!-- decided 2026-11-03 (reference demo review): critical scenario: if this breaks, the task is saved but filed or flagged wrong -->
 
 As a person adding a task, I want to type `!N` in the title so the task gets a
 priority from 1 (low) to 5 (urgent).
@@ -75,7 +75,7 @@ priority from 1 (low) to 5 (urgent).
 
 ## REQ-QUICKADD-005 — A due date can be set by typing a date into the title
 
-**Priority:** critical <!-- business-critical: if this breaks, the task is saved with a wrong title or a wrong or missing due date, silently -->
+**Priority:** critical <!-- decided 2026-11-03 (reference demo review): business-critical: if this breaks, the task is saved with a wrong title or a wrong or missing due date, silently -->
 
 As a person adding a task, I want to type a natural-language date anywhere in the
 title so it becomes the task's due date.
@@ -94,7 +94,7 @@ title so it becomes the task's due date.
 
 ## REQ-QUICKADD-006 — A due time can be added with "at"
 
-**Priority:** critical <!-- business-critical: if this breaks, the task is saved with a wrong title or a wrong or missing due date, silently -->
+**Priority:** critical <!-- decided 2026-11-03 (reference demo review): business-critical: if this breaks, the task is saved with a wrong title or a wrong or missing due date, silently -->
 
 As a person adding a task, I want to add `at <time>` after a date so the task is
 due at that time, not just on that day.
@@ -106,7 +106,7 @@ due at that time, not just on that day.
 
 ## REQ-QUICKADD-007 — A task can be made repeating by typing an interval into the title
 
-**Priority:** high <!-- critical scenario: if this breaks, the task is saved but filed or flagged wrong -->
+**Priority:** high <!-- decided 2026-11-03 (reference demo review): critical scenario: if this breaks, the task is saved but filed or flagged wrong -->
 
 As a person adding a task, I want to type `every <interval>` in the title so the
 task repeats.
@@ -119,7 +119,7 @@ task repeats.
 
 ## REQ-QUICKADD-008 — Several tasks can be created at once, one per line
 
-**Priority:** normal <!-- convenience: if this breaks, the user can still do it by hand -->
+**Priority:** normal <!-- decided 2026-11-03 (reference demo review): convenience: if this breaks, the user can still do it by hand -->
 
 As a person adding tasks, I want to enter or paste several lines so that each line
 becomes its own task in one go.
@@ -129,7 +129,7 @@ becomes its own task in one go.
 
 ## REQ-QUICKADD-009 — Indented lines become subtasks of the line above
 
-**Priority:** normal <!-- convenience: if this breaks, the user can still do it by hand -->
+**Priority:** normal <!-- decided 2026-11-03 (reference demo review): convenience: if this breaks, the user can still do it by hand -->
 
 As a person adding several tasks at once, I want to indent a line so it becomes a
 subtask of the line above it.
@@ -142,7 +142,7 @@ subtask of the line above it.
 
 ## REQ-QUICKADD-010 — Several markers can be combined in one title
 
-**Priority:** critical <!-- business-critical: if this breaks, the task is saved with a wrong title or a wrong or missing due date, silently -->
+**Priority:** critical <!-- decided 2026-11-03 (reference demo review): business-critical: if this breaks, the task is saved with a wrong title or a wrong or missing due date, silently -->
 
 As a person adding a task, I want to combine markers in a single title so all the
 details are set in one step and only the plain title remains.
@@ -153,7 +153,7 @@ details are set in one step and only the plain title remains.
 
 ## REQ-QUICKADD-011 — The Todoist-compatible mode can be chosen in settings
 
-**Priority:** low <!-- convenience, and the source does not define the behaviour -->
+**Priority:** low <!-- decided 2026-11-03 (reference demo review): convenience, and the source does not define the behaviour -->
 
 As a person used to Todoist, I want to switch Quick Add Magic to Todoist's
 shortcuts so I can keep typing the markers I know.
@@ -165,7 +165,7 @@ shortcuts so I can keep typing the markers I know.
 
 ## REQ-QUICKADD-012 — Quoting the whole title disables parsing
 
-**Priority:** critical <!-- business-critical: if this breaks, the task is saved with a wrong title or a wrong or missing due date, silently -->
+**Priority:** critical <!-- decided 2026-11-03 (reference demo review): business-critical: if this breaks, the task is saved with a wrong title or a wrong or missing due date, silently -->
 
 As a person adding a task whose title contains words Quick Add Magic would
 interpret, I want to wrap the title in quotes so it is stored literally.
