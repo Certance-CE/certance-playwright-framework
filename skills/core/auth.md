@@ -241,6 +241,27 @@ reason to sign in once, in `setup`, and reuse the session.
 A test cannot answer a push notification, a hardware key or an SMS code. For those, capture a
 session by hand (section 5's expiry rules apply to it).
 
+## 4d. Single sign-on through an identity provider
+
+When the application's sign-in hands over to an identity provider (Okta, Entra ID, Keycloak),
+tell `init` the name of the button or link that starts it:
+
+```bash
+npm run init -- --url https://staging.your-app.com --login /login --sso "Sign in with Okta"
+```
+
+`init` clicks it, follows the redirect, and reads the provider's form on whatever origin
+serves it. A partial name is enough when it is unique ("Okta" for "Sign in with Okta"); the
+locator written is the full, verified name. A **username-first** form (username, then Next,
+then the password on a second page) is recognised: with the test account in `.env`, `init`
+continues to the password page, verifies it, and signs in once to prove the whole path.
+Without it, the password page is generated as `NOT YET SEEN`.
+
+**Signed in, through a provider, means back on the application and off its sign-in page.**
+"The password field has gone" is not enough there: a provider's error page has no password
+field either, so a wrong password would look like success. The generated `expectSignedIn()`
+checks the URL, and a wrong password fails it (verified on the local test bed).
+
 ## 5. Auth state expiry
 
 Storage state files expire when session cookies expire. Signs of expiry:
