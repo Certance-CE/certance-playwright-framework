@@ -187,6 +187,24 @@ password made the generated sign-in check fail on the provider's page.
 
 ---
 
+## Extension: capturing a session by hand (2026-11-10)
+
+`npm run auth:capture` covers what a test cannot answer (a push notification, a hardware key,
+an SMS code, a CAPTCHA). A person signs in once in a real browser; the session is saved,
+git-ignored, and the setup project uses it with no password anywhere, checking it still signs
+in before every run. In CI the same session is the `STORAGE_STATE_BASE64` secret; the tool
+prints the command that stores it and never the session. The workflow passes the sign-in
+secrets to the suite, so a customer adds secrets and edits nothing.
+
+Proven on the two-step single sign-on test bed, with a script attached to the capture
+browser playing the person. With no account anywhere, the suite ran on the captured session
+(15 passed); with only the CI secret, setup passed; with the session's cookies and storage
+cleared, setup failed with the "has expired: run npm run auth:capture again" message. The
+first attempt at the last two checks still had the test account in `.env`, so setup never
+used the session and the checks proved nothing; they were rerun with the account removed.
+
+---
+
 ## Review date
 
 Revisit after the first customer `init`, against what it actually took.

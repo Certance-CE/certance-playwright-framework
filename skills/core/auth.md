@@ -262,6 +262,34 @@ Without it, the password page is generated as `NOT YET SEEN`.
 field either, so a wrong password would look like success. The generated `expectSignedIn()`
 checks the URL, and a wrong password fails it (verified on the local test bed).
 
+## 4e. Capturing a session by hand
+
+Some sign-ins no test can answer: a push notification to a phone, a hardware key, an SMS code,
+a CAPTCHA. For those, a person signs in once and the framework keeps the session:
+
+```bash
+npm run auth:capture -- --url https://staging.your-app.com --login /login
+```
+
+It opens a real browser window on the sign-in page. Sign in however your organisation
+requires; the session is saved when the browser is back in the application (or press Enter)
+to `test-data/.auth/captured.json`, which is git-ignored. From then on the setup project uses
+it, with no password anywhere, and checks it still signs in before every run. When it has
+expired, setup fails once with _the captured session no longer signs in (it has expired): run
+npm run auth:capture again_, instead of every scenario failing for no visible reason.
+
+**For CI**, store the same session as a secret. `auth:capture` prints the command and never the
+session, which is as sensitive as a password while it lasts:
+
+```bash
+base64 < test-data/.auth/captured.json | gh secret set STORAGE_STATE_BASE64
+```
+
+The workflow passes `STORAGE_STATE_BASE64` (and `TEST_USER_*`) from repository secrets to the
+suite, so adding the secret is the whole change. A captured session lasts as long as the
+identity provider lets it, often days or weeks: recapture on that rhythm, and prefer a test
+account with an authenticator secret (4c) where the organisation allows one.
+
 ## 5. Auth state expiry
 
 Storage state files expire when session cookies expire. Signs of expiry:

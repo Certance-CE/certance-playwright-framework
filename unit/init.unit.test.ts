@@ -161,7 +161,8 @@ describe('npm run init --totp — the one-time code step', () => {
 
   it('writes no code step for an account without one', () => {
     expect(withLogin['pages/LoginPage.ts']).not.toContain('totp');
-    expect(withLogin['tests/auth.setup.ts']).not.toContain('TOTP');
+    // The setup's comment may mention the optional secret; its sign-in call must not pass one.
+    expect(withLogin['tests/auth.setup.ts']).not.toMatch(/loginPage\.login\([^)]*TEST_USER_TOTP_SECRET/);
   });
 
   it('reads the --totp option', () => {
@@ -226,6 +227,53 @@ describe('npm run init --sso — sign-in through an identity provider', () => {
       init.parseArgs(['--url', 'https://a.test', '--login', '/login', '--sso', 'Sign in with Okta']),
     ).toMatchObject({
       sso: 'Sign in with Okta',
+    });
+  });
+});
+
+describe('npm run init — a session captured by hand (npm run auth:capture)', () => {
+  it('switches the signed-in lanes on for a captured session or the CI secret, not only an account', () => {
+    const config = withLogin['app.config.ts'];
+    expect(config).toContain("import { existsSync } from 'node:fs';");
+    expect(config).toContain('process.env.STORAGE_STATE_BASE64');
+    expect(config).toContain("existsSync('test-data/.auth/captured.json')");
+  });
+
+  it('checks a captured session before using it, and says what to do when it has expired', () => {
+    const setup = withLogin['tests/auth.setup.ts'];
+    expect(setup).toContain("Buffer.from(process.env.STORAGE_STATE_BASE64, 'base64')");
+    expect(setup).toMatch(/await new LoginPage\(captured\)\.expectSignedIn\(\)/);
+    expect(setup).toContain('run npm run auth:capture again');
+  });
+
+  it('writes no capture logic for an app without a sign-in', () => {
+    expect(noLogin['app.config.ts']).not.toContain('existsSync');
+  });
+});
+
+describe('npm run auth:capture', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const capture = require(path.join(__dirname, '../scripts/auth-capture.js'));
+
+  it('prints the command that stores the session as a CI secret, never the session itself', () => {
+    const lines = capture.ciInstructions('test-data/.auth/captured.json').join('\n');
+    expect(lines).toContain('base64 < test-data/.auth/captured.json | gh secret set STORAGE_STATE_BASE64');
+    expect(lines).not.toMatch(/"cookies"|"origins"|localStorage/);
+  });
+
+  it('needs to know which application, and saves to the git-ignored captured file by default', () => {
+    // Vitest sets BASE_URL to Vite's base path ("/"), so take it out to test "nothing given".
+    const base = process.env.BASE_URL;
+    delete process.env.BASE_URL;
+    try {
+      expect(() => capture.parseArgs([])).toThrow(/--url/);
+    } finally {
+      if (base !== undefined) process.env.BASE_URL = base;
+    }
+    expect(capture.parseArgs(['--url', 'https://app.test/anything'])).toMatchObject({
+      url: 'https://app.test',
+      login: '/login',
+      out: 'test-data/.auth/captured.json',
     });
   });
 });

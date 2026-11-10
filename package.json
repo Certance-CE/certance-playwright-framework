@@ -34,6 +34,7 @@
     "setup": "npm run setup:app && playwright install chromium",
     "setup:app": "node scripts/fetch-app.js",
     "init": "node scripts/init.js",
+    "auth:capture": "node scripts/auth-capture.js",
     "setup:hooks": "git config core.hooksPath .githooks",
     "test": "npm run bdd:gen && playwright test",
     "test:headed": "npm run bdd:gen && playwright test --headed",

@@ -107,6 +107,14 @@ jobs:
       # third party can decide this build looks like a bot.
       - name: Run the suite
         run: npm test
+        # The application's sign-in, from repository secrets: a test account, or a session
+        # captured by hand (npm run auth:capture). Unset here, which is harmless: the reference
+        # application provisions its own account. A customer adds the secrets, not workflow edits.
+        env:
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          TEST_USER_TOTP_SECRET: ${{ secrets.TEST_USER_TOTP_SECRET }}
+          STORAGE_STATE_BASE64: ${{ secrets.STORAGE_STATE_BASE64 }}
       # Render the run as GitHub job summaries. Both scripts are dependency-free and
       # never fail the build: a reporting layer must not be able to turn a green
       # suite red. Without these steps the CTRF reporter and the requirement
