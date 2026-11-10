@@ -301,7 +301,9 @@ async function claimUnusedCode(secret, totp) {
       fs.closeSync(fs.openSync(path.join(dir, `${account}-${step}`), 'wx'));
       return totp(secret, at);
     } catch (e) {
-      if (e.code !== 'EEXIST') throw e;
+      // Our own message: the error's file path is derived from the secret's hash.
+      if (e.code !== 'EEXIST')
+        throw new Error(`could not write the one-time code register in ${dir} (${e.code})`, { cause: e });
       await new Promise((resolve) => globalThis.setTimeout(resolve, (step + 1) * 30_000 - Date.now() + 50));
     }
   }
@@ -965,11 +967,25 @@ async function main() {
   console.log('turn them into scenarios (docs/DEVELOPER_GUIDE.md). Every PR runs the same gates as this repo.');
 }
 
-module.exports = { parseArgs, candidates, scaffold, schemaFor, slug };
+/**
+ * Remove the test account's values from a message before it is printed. Errors from a browser
+ * or a file system can quote what they were given; the account's password and authenticator
+ * secret must never reach a terminal or a CI log.
+ */
+function redact(message) {
+  let out = message;
+  for (const name of ['TEST_USER_PASSWORD', 'TEST_USER_TOTP_SECRET', 'APP_API_TOKEN']) {
+    const value = process.env[name];
+    if (value && value.length >= 4) out = out.split(value).join(`[${name}]`);
+  }
+  return out;
+}
+
+module.exports = { parseArgs, candidates, scaffold, schemaFor, slug, redact };
 
 if (require.main === module) {
   main().catch((e) => {
-    console.error(`init: ${e.message}`);
+    console.error(`init: ${redact(String(e && e.message))}`);
     process.exit(1);
   });
 }

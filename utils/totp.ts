@@ -17,9 +17,10 @@ const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 export function base32Decode(secret: string): Buffer {
   const clean = secret.replace(/[\s=-]/g, '').toUpperCase();
   let bits = '';
-  for (const char of clean) {
+  for (const [i, char] of [...clean].entries()) {
     const value = BASE32.indexOf(char);
-    if (value === -1) throw new Error(`not a base32 secret: unexpected "${char}"`);
+    // The position, never the character: this message must not print any part of a secret.
+    if (value === -1) throw new Error(`not a base32 secret: character ${i + 1} is not A–Z or 2–7`);
     bits += value.toString(2).padStart(5, '0');
   }
   const bytes: number[] = [];
@@ -59,7 +60,10 @@ export async function unusedTotp(
       closeSync(openSync(join(dir, `${account}-${step}`), 'wx')); // fails if this step is claimed
       return totp(secret, at, 6, stepSeconds);
     } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+      const code = (e as NodeJS.ErrnoException).code;
+      // Our own message: the error's file path is derived from the secret's hash.
+      if (code !== 'EEXIST')
+        throw new Error(`could not write the one-time code register in ${dir} (${code})`, { cause: e });
       const untilNextStep = (step + 1) * stepSeconds * 1000 - now() + 50;
       await new Promise((resolve) => setTimeout(resolve, Math.max(untilNextStep, 0)));
     }

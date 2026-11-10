@@ -169,6 +169,23 @@ describe('npm run init --totp — the one-time code step', () => {
   });
 });
 
+describe('npm run init — never prints the test account', () => {
+  it('removes the password, the authenticator secret and the API token from an error message', () => {
+    const saved = { ...process.env };
+    try {
+      Object.assign(process.env, {
+        TEST_USER_PASSWORD: 'hunter22pass',
+        TEST_USER_TOTP_SECRET: 'JBSWY3DPEHPK3PXP',
+        APP_API_TOKEN: 'Bearer abc123token',
+      });
+      const out = init.redact('fill("hunter22pass") failed for JBSWY3DPEHPK3PXP with Bearer abc123token');
+      expect(out).toBe('fill("[TEST_USER_PASSWORD]") failed for [TEST_USER_TOTP_SECRET] with [APP_API_TOKEN]');
+    } finally {
+      process.env = saved;
+    }
+  });
+});
+
 describe('npm run init — the priorities it proposes', () => {
   it('marks every priority it writes as proposed, so the customer confirms it', () => {
     for (const files of [withLogin, noLogin]) {

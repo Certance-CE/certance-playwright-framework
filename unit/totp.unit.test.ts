@@ -44,7 +44,9 @@ describe('base32Decode', () => {
   });
 
   it('rejects a secret that is not base32, rather than producing wrong codes', () => {
-    expect(() => base32Decode('GEZD1')).toThrow(/unexpected "1"/);
+    expect(() => base32Decode('GEZD1')).toThrow(/character 5 is not A–Z or 2–7/);
+    // The message names a position and never quotes the secret.
+    expect(() => base32Decode('GEZD1')).not.toThrow(/GEZD|"1"/);
     expect(() => base32Decode('  ')).toThrow(/empty/);
   });
 });
@@ -131,7 +133,9 @@ describe('unusedTotp — the claim register', () => {
     const d = dir();
     chmodSync(d, 0o500); // the directory exists, but nothing can be created in it
     try {
-      await expect(unusedTotp(RFC_SECRET, { dir: d, now: () => 59_000 })).rejects.toThrow(/EACCES|permission/i);
+      await expect(unusedTotp(RFC_SECRET, { dir: d, now: () => 59_000 })).rejects.toThrow(
+        /could not write the one-time code register in .* \(EACCES\)/,
+      );
     } finally {
       chmodSync(d, 0o700);
     }
