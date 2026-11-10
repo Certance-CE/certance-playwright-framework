@@ -80,7 +80,7 @@
     "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^10.5.0",
-    "@playwright/test": "^1.64.0",
+    "@playwright/test": "^1.65.0",
     "@stryker-mutator/core": "^10.0.0",
     "@stryker-mutator/vitest-runner": "^10.1.1",
     "@types/node": "^26.6.6",
