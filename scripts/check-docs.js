@@ -48,6 +48,7 @@ const ILLUSTRATIVE = [
 const EXPECTED_ABSENT = new Set([
   '.env', // created by the reader from .env.example
   'test-data/.auth/user.json', // produced by the auth seed
+  'test-data/.auth/captured.json', // written by `npm run auth:capture`
   'requirements/SMOKE.md', // written by `npm run init`
 ]);
 
