@@ -113,6 +113,79 @@ describe('npm run init — the scaffold it writes', () => {
   });
 });
 
+describe('npm run init --totp — the one-time code step', () => {
+  const seen = init.scaffold({
+    url: 'https://app.example.test',
+    name: 'Payments portal',
+    login: {
+      ...LOGIN,
+      code: {
+        discovered: true,
+        field: "getByRole('textbox', { name: 'Two Factor Authentication Code', exact: true })",
+        submit: "getByRole('button', { name: 'Login', exact: true })",
+        signedIn: true,
+      },
+    },
+  });
+  const unseen = init.scaffold({
+    url: 'https://app.example.test',
+    name: 'Payments portal',
+    login: { ...LOGIN, code: { discovered: false } },
+  });
+
+  it('passes the golden-rule lint, seen on the live page or not', async () => {
+    expect(await lintErrors(seen)).toEqual([]);
+    expect(await lintErrors(unseen)).toEqual([]);
+  });
+
+  it('uses the verified locators when the code field was seen', () => {
+    const page = seen['pages/LoginPage.ts'];
+    expect(page).toContain("this.page.getByRole('textbox', { name: 'Two Factor Authentication Code', exact: true })");
+    expect(page).toContain("import { unusedTotp } from '../utils/totp';");
+    expect(page).not.toContain('NOT YET SEEN');
+  });
+
+  it('marks a code field it has not seen, instead of presenting a guess as verified', () => {
+    const page = unseen['pages/LoginPage.ts'];
+    expect(page).toContain('NOT YET SEEN');
+    expect(page).toMatch(/getByLabel\(\/one-time/);
+  });
+
+  it('takes the secret from the caller, never from the Page Object, and only fills a code when given one', () => {
+    const page = seen['pages/LoginPage.ts'];
+    expect(page).toContain('async login(username: string, password: string, totpSecret?: string)');
+    expect(page).not.toContain('process.env');
+    expect(page).toMatch(/if \(totpSecret\) \{/);
+    expect(seen['tests/auth.setup.ts']).toContain('process.env.TEST_USER_TOTP_SECRET');
+  });
+
+  it('writes no code step for an account without one', () => {
+    expect(withLogin['pages/LoginPage.ts']).not.toContain('totp');
+    expect(withLogin['tests/auth.setup.ts']).not.toContain('TOTP');
+  });
+
+  it('reads the --totp option', () => {
+    expect(init.parseArgs(['--url', 'https://a.test', '--login', '/signin', '--totp'])).toMatchObject({ totp: true });
+  });
+});
+
+describe('npm run init — never prints the test account', () => {
+  it('removes the password, the authenticator secret and the API token from an error message', () => {
+    const saved = { ...process.env };
+    try {
+      Object.assign(process.env, {
+        TEST_USER_PASSWORD: 'hunter22pass',
+        TEST_USER_TOTP_SECRET: 'JBSWY3DPEHPK3PXP',
+        APP_API_TOKEN: 'Bearer abc123token',
+      });
+      const out = init.redact('fill("hunter22pass") failed for JBSWY3DPEHPK3PXP with Bearer abc123token');
+      expect(out).toBe('fill("[TEST_USER_PASSWORD]") failed for [TEST_USER_TOTP_SECRET] with [APP_API_TOKEN]');
+    } finally {
+      process.env = saved;
+    }
+  });
+});
+
 describe('npm run init — the priorities it proposes', () => {
   it('marks every priority it writes as proposed, so the customer confirms it', () => {
     for (const files of [withLogin, noLogin]) {

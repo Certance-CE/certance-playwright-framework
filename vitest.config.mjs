@@ -17,7 +17,7 @@ export default defineConfig({
       // Scoped to the pure, dependency-free modules that unit tests can honestly
       // reach. utils/performance.ts's budget logic is pure (its page script and file
       // I/O run in the @perf lane); utils/visual.ts needs a Page, so Playwright owns it.
-      include: ['utils/contract.ts', 'utils/test-data.ts', 'utils/performance.ts'],
+      include: ['utils/contract.ts', 'utils/test-data.ts', 'utils/performance.ts', 'utils/totp.ts'],
     },
   },
 });
