@@ -27,6 +27,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const { proxyFromEnv } = require('./lib/network');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -151,7 +152,7 @@ async function submitButton(form) {
 
 async function probe(url, loginPath, { totp: wantsTotp = false, sso } = {}) {
   const { chromium } = require('@playwright/test');
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ proxy: proxyFromEnv() });
   try {
     const page = await browser.newPage({ baseURL: url });
     await page.goto(loginPath || '/', { waitUntil: 'domcontentloaded' });
@@ -265,7 +266,7 @@ async function probe(url, loginPath, { totp: wantsTotp = false, sso } = {}) {
 async function probeApi(endpoint) {
   const { request } = require('@playwright/test');
   const target = new URL(endpoint);
-  const ctx = await request.newContext({ extraHTTPHeaders: { Accept: 'application/json' } });
+  const ctx = await request.newContext({ extraHTTPHeaders: { Accept: 'application/json' }, proxy: proxyFromEnv() });
   try {
     const res = await ctx.get(target.href);
     const status = res.status();

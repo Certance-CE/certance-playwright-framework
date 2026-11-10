@@ -16,6 +16,8 @@
  *
  * Usage: node scripts/fetch-app.js
  */
+// Behind a corporate proxy, Node's fetch needs --use-env-proxy (scripts/lib/network.js).
+require('./lib/network').ensureEnvProxy();
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');

@@ -16,6 +16,8 @@
  * Dep-free: uses Node's built-in global fetch (Node 18+). No HTML parser — a
  * deliberately small tag-stripper, good enough to feed an LLM extractor.
  */
+// Behind a corporate proxy, Node's fetch needs --use-env-proxy (scripts/lib/network.js).
+require('./lib/network').ensureEnvProxy();
 const MAX = (() => {
   const i = process.argv.indexOf('--max');
   const n = i !== -1 ? parseInt(process.argv[i + 1], 10) : NaN;
