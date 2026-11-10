@@ -188,3 +188,75 @@ describe('governed-skip gate — assertions', () => {
     expect(run(diff).status).toBe(1);
   });
 });
+
+/**
+ * The requirement catalogue (ADR-012 extension). A requirement's priority decides what the
+ * coverage gate enforces, so lowering one, or deleting a requirement, weakens the suite as
+ * surely as deleting an assertion, and needs a recorded reason the same way.
+ */
+const reqDiff = (file: string, body: string[]) =>
+  `diff --git a/${file} b/${file}\n--- a/${file}\n+++ b/${file}\n@@ -1,5 +1,5 @@\n${body.join('\n')}\n`;
+const heading = ' ## REQ-PAY-001 — Fees are calculated correctly';
+
+describe('governed-skip gate — requirement priorities', () => {
+  it('fails when a priority is lowered', () => {
+    const r = run(reqDiff('requirements/PAY.md', [heading, ' ', '-**Priority:** critical', '+**Priority:** normal']));
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('REQ-PAY-001 critical → normal');
+  });
+
+  it('passes a lowered priority that records who decided and why', () => {
+    const r = run(
+      reqDiff('requirements/PAY.md', [
+        heading,
+        ' ',
+        '-**Priority:** critical',
+        '+**Priority:** normal <!-- decided 2026-11-10: governed-change: product owner, a convenience -->',
+      ]),
+    );
+    expect(r.status).toBe(0);
+  });
+
+  it('allows raising a priority', () => {
+    const r = run(reqDiff('requirements/PAY.md', [heading, ' ', '-**Priority:** normal', '+**Priority:** critical']));
+    expect(r.status).toBe(0);
+  });
+
+  it('allows setting a priority where there was none (unset is not a level)', () => {
+    const r = run(reqDiff('requirements/PAY.md', [heading, ' ', '-**Priority:** unset', '+**Priority:** low']));
+    expect(r.status).toBe(0);
+  });
+
+  it('fails when a priority is changed to a word the engine does not know', () => {
+    const r = run(reqDiff('requirements/PAY.md', [heading, ' ', '-**Priority:** high', '+**Priority:** hihg']));
+    expect(r.status).toBe(1);
+  });
+
+  it('fails when a file default is lowered', () => {
+    const r = run(reqDiff('requirements/PAY.md', [' ---', ' epic: Payments', '-priority: high', '+priority: low']));
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('(file default) high → low');
+  });
+
+  it('fails when a requirement is deleted, and passes with a recorded reason', () => {
+    const del = ['-## REQ-PAY-001 — Fees are calculated correctly', '-', '-**Priority:** critical'];
+    expect(run(reqDiff('requirements/PAY.md', del)).status).toBe(1);
+    const why = [...del, '+<!-- governed-change: REQ-PAY-001 retired with the fee model, product owner 2026-11-10 -->'];
+    expect(run(reqDiff('requirements/PAY.md', why)).status).toBe(0);
+  });
+
+  it('passes a requirement moved to another file', () => {
+    const diff =
+      reqDiff('requirements/PAY.md', ['-## REQ-PAY-001 — Fees are calculated correctly', '-**Priority:** critical']) +
+      reqDiff('requirements/BILLING.md', [
+        '+## REQ-PAY-001 — Fees are calculated correctly',
+        '+**Priority:** critical',
+      ]);
+    expect(run(diff).status).toBe(0);
+  });
+
+  it('ignores the requirements README, which describes priorities rather than setting them', () => {
+    const r = run(reqDiff('requirements/README.md', [' ## Ranking', '-**Priority:** critical', '+**Priority:** low']));
+    expect(r.status).toBe(0);
+  });
+});

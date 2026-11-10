@@ -57,6 +57,12 @@ Every priority says where it came from, in a comment after it:
 gate as **critical**, and the matrix lists them under "needs a priority". Failing closed is
 the point: a priority nobody set must not quietly switch the gate off.
 
+In CI the gate reports rather than fails: an uncovered critical, high or unset requirement is
+a warning on the run and at the top of the matrix (`REQ_FAIL_ON_GAP=1` makes it fail). Lowering
+a priority, or deleting a requirement, fails the pull request unless the change records who
+decided and why with a `governed-change:` note, for example
+`**Priority:** normal <!-- decided 2026-11-10: governed-change: product owner, a convenience -->`.
+
 ## Adding one
 
 1. Add a `## REQ-AREA-NNN — Title` heading with a `**Priority:**` line to the relevant

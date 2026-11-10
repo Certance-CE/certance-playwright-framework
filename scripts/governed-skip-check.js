@@ -124,7 +124,74 @@ function scanAssertions(diff) {
   return { removed: net ? unpairedRemoved : [], changed };
 }
 
-module.exports = { scanDiff, scanAssertions, TEST_FILE, ASSERT_FILE, WEAKEN, WAIVER };
+// The requirement catalogue: a priority there decides what the coverage gate enforces.
+const REQ_FILE = /(?:^|\/)requirements\/(?!README\.md$)[^/]+\.md$/;
+const RANK = { critical: 0, high: 1, normal: 2, low: 3 };
+const HEADING = /^##\s+(REQ-[A-Z0-9]+-\d+)\b/;
+const PRIORITY_LINE = /\*\*Priority:\*\*\s*([^\s<]+)/i;
+const DEFAULT_LINE = /^priority:\s*([^\s#]+)/i;
+
+/**
+ * Scan a unified git diff for a weakened requirement catalogue; return `{ lowered, deleted }`.
+ * `lowered`: a requirement's priority (or a file's default) moved down the critical → low
+ * scale, with no `governed-change:` reason on the new line. Raising one, or setting one where
+ * there was none (`unset` → anything: that is the decision itself), is always allowed.
+ * `deleted`: a `## REQ-…` heading removed and not re-added anywhere in the diff (so a move
+ * between files passes), with no `governed-change:` reason anywhere in the diff.
+ */
+function scanPriorities(diff) {
+  const lowered = [];
+  const removedHeads = [];
+  const addedHeads = new Set();
+  let waived = false;
+  let file = null;
+  let req = null;
+  let before = {};
+  let after = {};
+  const flush = () => {
+    for (const key of Object.keys(before)) {
+      const was = before[key];
+      const now = after[key];
+      if (!now || RANK[was.word] === undefined) continue; // removed line → unset fails closed; unset → set is a decision
+      if (RANK[now.word] === undefined || RANK[now.word] > RANK[was.word]) {
+        if (!WAIVER.test(now.line)) lowered.push({ file, req: key, from: was.word, to: now.word });
+      }
+    }
+    before = {};
+    after = {};
+  };
+  for (const raw of String(diff).split('\n')) {
+    const neu = raw.match(/^\+\+\+ b\/(.+)$/);
+    const old = raw.match(/^--- a\/(.+)$/);
+    if (old || neu) {
+      if (old) flush();
+      file = (neu || old)[1];
+      req = null;
+      continue;
+    }
+    if (raw.startsWith('diff ')) continue;
+    const sign = raw[0];
+    if (sign === '+' && WAIVER.test(raw)) waived = true;
+    if (!file || !REQ_FILE.test(file) || (sign !== '+' && sign !== '-' && sign !== ' ')) continue;
+    const line = raw.slice(1);
+    const h = line.match(HEADING);
+    if (h) {
+      req = h[1];
+      if (sign === '-') removedHeads.push({ file, req });
+      if (sign === '+') addedHeads.add(req);
+      continue;
+    }
+    const p = line.match(PRIORITY_LINE) || (req === null && line.match(DEFAULT_LINE));
+    if (!p || sign === ' ') continue;
+    const key = req || '(file default)';
+    (sign === '-' ? before : after)[key] = { word: p[1].toLowerCase(), line };
+  }
+  flush();
+  const deleted = waived ? [] : removedHeads.filter((h) => !addedHeads.has(h.req));
+  return { lowered, deleted };
+}
+
+module.exports = { scanDiff, scanAssertions, scanPriorities, TEST_FILE, ASSERT_FILE, REQ_FILE, WEAKEN, WAIVER };
 
 if (require.main === module) {
   let diff = '';
@@ -145,6 +212,7 @@ if (require.main === module) {
 
   const violations = scanDiff(diff);
   const { removed, changed } = scanAssertions(diff);
+  const { lowered, deleted } = scanPriorities(diff);
   if (violations.length) {
     console.error(`\ngoverned-skip gate: ${violations.length} test(s) muted without a recorded reason.`);
     console.error('A skipped, fixme-d or .only-focused test hides a failure. Record why on the line:');
@@ -164,6 +232,21 @@ if (require.main === module) {
     console.error('saying why, e.g. in the commit to the spec:  // governed-change: REQ-123 retired');
     for (const r of removed) console.error(`  ✗ ${r.file}: ${r.line}`);
   }
-  if (violations.length || changed.length || removed.length) process.exit(1);
-  console.log('governed-skip gate: no test muted, no assertion removed or changed without a recorded reason ✓');
+  if (lowered.length) {
+    console.error(
+      `\ngoverned-skip gate: ${lowered.length} requirement priorit(y/ies) lowered without a recorded reason.`,
+    );
+    console.error('A lower priority means the coverage gate checks it less. Record who decided and why on the line:');
+    console.error('  **Priority:** normal <!-- decided 2026-11-10: governed-change: product owner, a convenience -->');
+    for (const l of lowered) console.error(`  ✗ ${l.file}: ${l.req} ${l.from} → ${l.to}`);
+  }
+  if (deleted.length) {
+    console.error(`\ngoverned-skip gate: ${deleted.length} requirement(s) deleted without a recorded reason.`);
+    console.error('A deleted requirement cannot show up as a gap. Add a governed-change: note to the diff saying why.');
+    for (const d of deleted) console.error(`  ✗ ${d.file}: ${d.req}`);
+  }
+  if (violations.length || changed.length || removed.length || lowered.length || deleted.length) process.exit(1);
+  console.log(
+    'governed-skip gate: no test muted, no assertion removed or changed, no requirement lowered or deleted without a recorded reason ✓',
+  );
 }
