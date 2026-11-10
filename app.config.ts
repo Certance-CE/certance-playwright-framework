@@ -86,6 +86,11 @@ export function target({ bddDir }: { bddDir: string }): Target {
             // in parallel: Quick Add saves a task and then its labels and assignees at once,
             // and the labels came back HTTP 500 under load (seen in a failure trace). A pool
             // of one matches what SQLite is; SERIALISED_WRITES below does the same for tests.
+            // It makes the collision rarer, not impossible: Vikunja's background notification
+            // handler also writes, and SQLite rejects the label write at once (a busy snapshot,
+            // which busy_timeout does not cover). The Quick Add assignee-and-labels scenario
+            // fails about one run in four for that reason, and stays running: it is a product
+            // defect, not a test one (docs/demo/business-spec-to-green.md).
             VIKUNJA_DATABASE_MAXOPENCONNECTIONS: '1',
             VIKUNJA_FILES_BASEPATH: path.join(os.tmpdir(), 'certance-lens-files'),
             VIKUNJA_SERVICE_PUBLICURL: `${APP}/`,
