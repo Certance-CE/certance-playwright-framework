@@ -72,8 +72,8 @@ function checkBrowsers() {
     '',
     c(BOLD, '    npx playwright install chromium'),
     '',
-    c(DIM, 'Behind a corporate proxy or mirror, see docs — PLAYWRIGHT_DOWNLOAD_HOST,'),
-    c(DIM, 'HTTPS_PROXY and NODE_EXTRA_CA_CERTS are all respected.'),
+    c(DIM, 'Behind a corporate proxy, a registry mirror or TLS inspection, see'),
+    c(DIM, 'docs/CORPORATE_NETWORK.md: what to set, and what was measured to work.'),
   ]);
 }
 

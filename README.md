@@ -82,6 +82,8 @@ npm run init -- --url https://staging.your-app.com --login /sign-in \
 
 The first run needs **no credentials**: it checks the sign-in form, without signing in. Put a test account in `.env` (`TEST_USER_EMAIL`, `TEST_USER_PASSWORD`) and the signed-in lanes switch on by themselves. Measured on two applications the framework had never seen: **44 seconds** from `git clone` to a green run, and **11 seconds** from `init` to a green signed-in run, with lint, typecheck, docs, agent drift, unit tests and the integrity gate all passing on the resulting pull request. Leave out `--login` for an app with no sign-in.
 
+Behind a corporate proxy, a private registry or TLS inspection: [docs/CORPORATE_NETWORK.md](docs/CORPORATE_NETWORK.md) says what to set, and which parts were measured to work.
+
 From there, write requirements in `requirements/` and let the planner and generator agents turn them into scenarios. Every pull request runs the same gates as this repository.
 
 ---

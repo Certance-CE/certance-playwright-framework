@@ -21,6 +21,9 @@ const reportFormat: 'html' | 'blob' = process.env.PW_BLOB ? 'blob' : 'html';
 // lives in app.config.ts. This file is the core and does not change when you retarget.
 const app = target({ bddDir: bddOutputDir });
 
+const env = process.env;
+const proxyServer = env.HTTPS_PROXY || env.https_proxy || env.HTTP_PROXY || env.http_proxy;
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: !process.env.CI,
@@ -63,6 +66,25 @@ export default defineConfig({
   ],
   use: {
     baseURL: app.baseURL,
+    // Behind a corporate proxy: Playwright's browser and API client ignore HTTPS_PROXY unless
+    // told (measured), so it is passed on here. Loopback always goes direct, so the
+    // reference application keeps working. Same rule as scripts/lib/network.js.
+    ...(proxyServer
+      ? {
+          proxy: {
+            server: proxyServer,
+            bypass: [
+              'localhost',
+              '127.0.0.1',
+              '::1',
+              ...(process.env.NO_PROXY || process.env.no_proxy || '').split(','),
+            ]
+              .map((h) => h.trim())
+              .filter(Boolean)
+              .join(','),
+          },
+        }
+      : {}),
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',

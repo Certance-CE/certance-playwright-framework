@@ -72,6 +72,7 @@ async function main() {
   const { chromium } = require('@playwright/test');
   const browser = await chromium.launch({
     headless: opts.headless,
+    proxy: require('./lib/network').proxyFromEnv(),
     args: opts.debugPort ? [`--remote-debugging-port=${opts.debugPort}`] : [],
   });
   const context = await browser.newContext({ baseURL: opts.url });
