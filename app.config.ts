@@ -92,6 +92,13 @@ export function target({ bddDir }: { bddDir: string }): Target {
             // fails about one run in four for that reason, and stays running: it is a product
             // defect, not a test one (docs/demo/business-spec-to-green.md).
             VIKUNJA_DATABASE_MAXOPENCONNECTIONS: '1',
+            // A session that outlives the run. Vikunja's access token lasts 10 minutes and its
+            // refresh cookie works once, while every test starts from the one session setup
+            // saved. The first test whose page refreshed it used the cookie up; once the token
+            // ran out, every later test was signed out. A run under 10 minutes never showed it;
+            // a shuffled run that took longer failed 22 tests (Playwright --shuffle, seed 202).
+            // Two hours covers any run. Your application: see skills/core/auth.md, section 5.
+            VIKUNJA_SERVICE_JWTTTLSHORT: '7200',
             VIKUNJA_FILES_BASEPATH: path.join(os.tmpdir(), 'certance-lens-files'),
             VIKUNJA_SERVICE_PUBLICURL: `${APP}/`,
             VIKUNJA_SERVICE_ENABLEREGISTRATION: 'true',

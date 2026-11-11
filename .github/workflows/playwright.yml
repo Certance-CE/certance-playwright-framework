@@ -84,6 +84,32 @@ jobs:
 
   # BDD suites — no secrets. The showcase runs against a real application the job starts
   # itself; the portability lane runs against a second, public one.
+  # Golden rule 4, checked rather than claimed: every test must pass in any order. The same
+  # suite, shuffled (Playwright --shuffle), under fixed seeds, so a failure names the seed
+  # that reproduces it: `npx playwright test --shuffle <seed>`. It found a real defect the
+  # first time it ran: one saved session shared by every test, with a one-time refresh
+  # cookie, failed 22 tests once a run outlasted the 10-minute token.
+  order:
+    name: Order independence (seed ${{ matrix.seed }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [101, 202, 303]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Prepare the application under test
+        run: npm run setup:app
+      - name: Run the suite in a shuffled order
+        run: npm run test:shuffled -- ${{ matrix.seed }}
+
   bdd:
     name: BDD (self-hosted app + TodoMVC)
     runs-on: ubuntu-latest

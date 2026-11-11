@@ -55,6 +55,20 @@ unit:
     paths:
       - reports/mutation/
 
+# Golden rule 4, checked: the suite in a shuffled order, under fixed seeds. A failure names
+# the seed that reproduces it: `npm run test:shuffled -- <seed>`.
+order:
+  stage: suite
+  needs: []
+  parallel:
+    matrix:
+      - SEED: ['101', '202', '303']
+  script:
+    - npm ci
+    - npx playwright install --with-deps chromium
+    - npm run setup:app
+    - npm run test:shuffled -- $SEED
+
 suite:
   stage: suite
   needs: []
