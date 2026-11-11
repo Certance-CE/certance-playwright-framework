@@ -62,6 +62,7 @@
     "test:shuffled": "npm run bdd:gen && playwright test --shuffle",
     "test:perf": "npm run bdd:gen && playwright test --grep @perf",
     "perf:summary": "node scripts/perf-summary.js",
+    "triage": "node scripts/triage.js",
     "report": "allure generate allure-results --clean",
     "ctrf:summary": "node scripts/ctrf-summary.js",
     "pretest": "node scripts/preflight.js"

@@ -1,0 +1,267 @@
+{
+ "suites": [
+  {
+   "title": "../framework-tests/zz-planted.spec.ts",
+   "specs": [
+    {
+     "title": "product: wrong value on a found element",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "unexpected",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "Error: expect(locator).toHaveText(expected) failed\n\nLocator:  getByRole('heading')\nExpected: \"Total: 10.00\"\nReceived: \"Total: 9.99\"\nTimeout:  1000ms\n\nCall log:\n  - Expect \"toHaveText\" getByRole('heading') with timeout 1000ms\n  - waiting for getByRole('heading')\n    11 × locator resolved to <h1>Total: 9.99</h1>\n       - unexpected value \"Total: 9.99\"\n"
+         }
+        },
+        {
+         "status": "failed",
+         "retry": 1,
+         "error": {
+          "message": "Error: expect(locator).toHaveText(expected) failed\n\nLocator:  getByRole('heading')\nExpected: \"Total: 10.00\"\nReceived: \"Total: 9.99\"\nTimeout:  1000ms\n\nCall log:\n  - Expect \"toHaveText\" getByRole('heading') with timeout 1000ms\n  - waiting for getByRole('heading')\n    11 × locator resolved to <h1>Total: 9.99</h1>\n       - unexpected value \"Total: 9.99\"\n"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "product: wrong count",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "unexpected",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  getByRole('listitem')\nExpected: 3\nReceived: 2\nTimeout:  1000ms\n\nCall log:\n  - Expect \"toHaveCount\" getByRole('listitem') with timeout 1000ms\n  - waiting for getByRole('listitem')\n    11 × locator resolved to 2 elements\n       - unexpected value \"2\"\n"
+         }
+        },
+        {
+         "status": "failed",
+         "retry": 1,
+         "error": {
+          "message": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  getByRole('listitem')\nExpected: 3\nReceived: 2\nTimeout:  1000ms\n\nCall log:\n  - Expect \"toHaveCount\" getByRole('listitem') with timeout 1000ms\n  - waiting for getByRole('listitem')\n    11 × locator resolved to 2 elements\n       - unexpected value \"2\"\n"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "product: server error from the application",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "unexpected",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "Error: http://127.0.0.1:3456/api/v1/tasks/5/labels — {\"message\":\"Internal Server Error\"}\n\nexpect(received).toBe(expected) // Object.is equality\n\nExpected: 200\nReceived: 500"
+         }
+        },
+        {
+         "status": "failed",
+         "retry": 1,
+         "error": {
+          "message": "Error: http://127.0.0.1:3456/api/v1/tasks/5/labels — {\"message\":\"Internal Server Error\"}\n\nexpect(received).toBe(expected) // Object.is equality\n\nExpected: 200\nReceived: 500"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "test: locator matches nothing",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "unexpected",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "TimeoutError: locator.click: Timeout 1000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Submit payment' })\n"
+         }
+        },
+        {
+         "status": "failed",
+         "retry": 1,
+         "error": {
+          "message": "TimeoutError: locator.click: Timeout 1000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Submit payment' })\n"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "test: assertion on a locator that matches nothing",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "unexpected",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Submit payment' })\nExpected: visible\nTimeout: 1000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" getByRole('button', { name: 'Submit payment' }) with timeout 1000ms\n  - waiting for getByRole('button', { name: 'Submit payment' })\n"
+         }
+        },
+        {
+         "status": "failed",
+         "retry": 1,
+         "error": {
+          "message": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Submit payment' })\nExpected: visible\nTimeout: 1000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" getByRole('button', { name: 'Submit payment' }) with timeout 1000ms\n  - waiting for getByRole('button', { name: 'Submit payment' })\n"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "test: locator matches several",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "unexpected",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "Error: locator.click: Error: strict mode violation: getByRole('button', { name: 'Pay' }) resolved to 2 elements:\n    1) <button>Pay</button> aka getByRole('button', { name: 'Pay' }).first()\n    2) <button>Pay</button> aka getByRole('button', { name: 'Pay' }).nth(1)\n\nCall log:\n  - waiting for getByRole('button', { name: 'Pay' })\n"
+         }
+        },
+        {
+         "status": "failed",
+         "retry": 1,
+         "error": {
+          "message": "Error: locator.click: Error: strict mode violation: getByRole('button', { name: 'Pay' }) resolved to 2 elements:\n    1) <button>Pay</button> aka getByRole('button', { name: 'Pay' }).first()\n    2) <button>Pay</button> aka getByRole('button', { name: 'Pay' }).nth(1)\n\nCall log:\n  - waiting for getByRole('button', { name: 'Pay' })\n"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "env: application not reachable",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "unexpected",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:59999/\nCall log:\n  - navigating to \"http://127.0.0.1:59999/\", waiting until \"load\"\n"
+         }
+        },
+        {
+         "status": "failed",
+         "retry": 1,
+         "error": {
+          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:59999/\nCall log:\n  - navigating to \"http://127.0.0.1:59999/\", waiting until \"load\"\n"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "env: session token rejected",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "unexpected",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "Error: http://127.0.0.1:3456/api/v1/projects — {\"code\":11,\"message\":\"missing, malformed, expired or otherwise invalid token provided\"}\n\nexpect(received).toBe(expected) // Object.is equality\n\nExpected: 201\nReceived: 401"
+         }
+        },
+        {
+         "status": "failed",
+         "retry": 1,
+         "error": {
+          "message": "Error: http://127.0.0.1:3456/api/v1/projects — {\"code\":11,\"message\":\"missing, malformed, expired or otherwise invalid token provided\"}\n\nexpect(received).toBe(expected) // Object.is equality\n\nExpected: 201\nReceived: 401"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "env: rate limited",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "unexpected",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "Error: http://127.0.0.1:3456/api/v1/login — {\"message\":\"Too Many Requests\"}\n\nexpect(received).toBe(expected) // Object.is equality\n\nExpected: 200\nReceived: 429"
+         }
+        },
+        {
+         "status": "failed",
+         "retry": 1,
+         "error": {
+          "message": "Error: http://127.0.0.1:3456/api/v1/login — {\"message\":\"Too Many Requests\"}\n\nexpect(received).toBe(expected) // Object.is equality\n\nExpected: 200\nReceived: 429"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "title": "flake: fails on the first attempt only",
+     "file": "framework-tests/planted.spec.ts",
+     "tests": [
+      {
+       "projectName": "chromium",
+       "status": "flaky",
+       "results": [
+        {
+         "status": "failed",
+         "retry": 0,
+         "error": {
+          "message": "Error: first attempt fails\n\nexpect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0"
+         }
+        },
+        {
+         "status": "passed",
+         "retry": 1
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "suites": []
+  }
+ ]
+}

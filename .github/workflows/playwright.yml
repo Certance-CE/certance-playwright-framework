@@ -160,6 +160,13 @@ jobs:
         if: always()
         run: npm run perf:summary
 
+      # Every failure classified before anything touches it (Governed Loop stage 07): product
+      # defect (a finding), test defect (the only kind the healer may act on), environment,
+      # flake. Report only; it never changes the build's result.
+      - name: Failure triage
+        if: always()
+        run: npm run triage
+
       - name: Requirement traceability
         if: always()
         run: npm run coverage:requirements

@@ -56,3 +56,9 @@ removes an `expect(`, or changes what an `expect(` asserts fails unless a human 
 reason into it: `// governed-skip: …` on a mute, `// governed-change: …` on an assertion
 change. An agent must not write those notes itself. Surface the finding and let the human
 decide.
+
+**Triage before anything is touched** (`npm run triage`, ADR-013). Every failure is
+classified first: `product`, `test`, `environment`, `flake` or `unclassified`, written to
+`test-results/triage.json`. The healer acts **only on a failure classified `test`** (its
+`healable` is true). A `product` failure is a finding: report it, and do not change the test
+to make it pass. `environment` is rerun, not edited. Anything else waits for a person.

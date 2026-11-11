@@ -34,7 +34,7 @@ export default defineConfig({
   historyPath: './allure-history/history.jsonl',
   historyLimit: 30,
   variables,
-  globalAttachments: ['./requirements-coverage.md', './performance-report.md'],
+  globalAttachments: ['./triage.md', './requirements-coverage.md', './performance-report.md'],
   plugins: {
     awesome: {
       options: {
