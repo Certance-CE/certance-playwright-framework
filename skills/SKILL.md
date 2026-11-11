@@ -125,8 +125,9 @@ generated, reviewed, or modified in a Certance Lens project.
 
 10. **Healer owns locator fixes** — when locators break due to UI
     changes, run the Healer agent. Do not manually patch selectors in
-    bulk. If the Healer marks a test `test.fixme()`, treat it as a
-    genuine application regression — investigate before overriding.
+    bulk. The Healer acts only on failures `npm run triage` classes as
+    test defects, changes only locators, and never mutes a test; a
+    product failure is reported as a finding (`npm run heal:check`).
 
 11. **Fixtures inject Page Objects** — never instantiate Page Objects
     with `new` inside a test body or step definition. Receive them
@@ -211,12 +212,13 @@ writes, and choose a stable locator over a brittle one.
 ### Healer agent
 
 **Input:** Failing test suite + accessibility tree snapshots + console logs  
-**Output:** Patched locators or `test.fixme()` annotations  
-**When to run:** After any UI change that breaks existing tests  
+**Output:** Patched locators only; product failures reported as findings  
+**When to run:** After `npm run triage` classes a failure as a test defect  
 **What the brief instructs:** distinguish a broken locator (replace it with an
 equal-or-stronger one) from a real regression (surface it, never silence it).
-Enforcing that automatically is a governance gate the public framework does not
-yet ship, so today it rests on the human review step above.
+That is enforced, not left to the brief: triage decides which failures are
+healable (ADR-013), and `npm run heal:check` refuses a heal that changes anything
+but locators (ADR-014). The human review step above still reads the diff.
 
 ---
 

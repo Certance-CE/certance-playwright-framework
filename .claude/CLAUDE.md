@@ -62,3 +62,12 @@ classified first: `product`, `test`, `environment`, `flake` or `unclassified`, w
 `test-results/triage.json`. The healer acts **only on a failure classified `test`** (its
 `healable` is true). A `product` failure is a finding: report it, and do not change the test
 to make it pass. `environment` is rerun, not edited. Anything else waits for a person.
+
+**The healer's authority is checked** (`npm run heal:check`, ADR-014). Before a healer
+finishes, it runs `npm run heal:check`, which holds its change to the run's triage. A heal
+may change **only locators**, in `pages/` or in the spec file of a healable failure. It may
+not touch a feature file, step definition, requirement or config. It may not add, remove or
+change what an `expect(` claims; repointing the locator inside one is allowed. And it may
+not mute a test or write a `governed-` note. A refused check means stop and report: the
+change is not made smaller until it passes. Where the stock healer brief says to fix
+assertions or expected values, or to `test.fixme()` a test, **this rule wins**.

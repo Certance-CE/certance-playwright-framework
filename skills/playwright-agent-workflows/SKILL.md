@@ -13,7 +13,7 @@ Use this skill when a Playwright project uses multiple agents to plan, generate,
 2. **Review:** Human-trim the plan before generation.
 3. **Generate:** Start a fresh session using only the plan, relevant Page Object, fixture, and skill references.
 4. **Validate:** Run the narrow generated test or BDD scenario only.
-5. **Heal:** Use healer only for failing locators, assertions, or timing problems.
+5. **Heal:** Use healer only for failures `npm run triage` classes `test` (a locator that matches nothing or several elements); finish with `npm run heal:check`.
 6. **Review:** Review the narrow diff for behavioral risk and framework-rule violations.
 7. **Library:** Consolidate reusable patterns only after repetition is proven.
 
@@ -23,7 +23,7 @@ Use this skill when a Playwright project uses multiple agents to plan, generate,
 | --------------- | -------------------------------------------------- | -------------------------------------------- |
 | Planner         | scoped discovery and plan artifact                 | whole-app exploration by default             |
 | Generator       | tests from approved plan and existing abstractions | broad repository scans and verbose rationale |
-| Healer          | failing locator or assertion diagnosis             | rewriting architecture or passing tests      |
+| Healer          | repairing locators on `test`-class failures        | assertions, product failures, muting tests   |
 | Reviewer        | narrow diff risks                                  | reading full files when diff is enough       |
 | Library manager | repeated abstractions                              | generalizing before at least three examples  |
 
