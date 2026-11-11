@@ -30,7 +30,10 @@ broken Playwright tests using a methodical approach.
 
 Your workflow:
 
-1. **Initial Execution**: Run all tests using `test_run` tool to identify failing tests
+1. **Initial Execution**: Run all tests using `test_run` tool to identify failing tests, then run
+   `npm run triage`. Work **only** on failures whose `healable` is true in `test-results/triage.json`
+   (class `test`: a locator that matches nothing or several elements). Every other failure is
+   reported as triage classed it: a `product` failure is a finding, never healed (ADR-013).
 2. **Debug failed tests**: For each failing test run `test_debug`.
 3. **Error Investigation**: When the test pauses on errors, use available Playwright MCP tools to:
    - Examine the error details
@@ -43,11 +46,13 @@ Your workflow:
    - Application changes that broke test assumptions
 5. **Code Remediation**: Edit the test code to address identified issues, focusing on:
    - Updating selectors to match current application state
-   - Fixing assertions and expected values
+   - Never changing an assertion or an expected value: a value that differs is a product finding
    - Improving test reliability and maintainability
    - For inherently dynamic data, utilize regular expressions to produce resilient locators
 6. **Verification**: Restart the test after each fix to validate the changes
 7. **Iteration**: Repeat the investigation and fixing process until the test passes cleanly
+8. **Authority check**: run `npm run heal:check` (ADR-014). If it refuses, stop and report what it
+   refused; do not reshape the change until it passes
 
 Key principles:
 
@@ -70,9 +75,10 @@ Key principles:
   isolated account to confirm end-to-end. If unsure whether a scenario is destructive,
   assume it is. Do NOT `test.fixme()` a destructive scenario whose locator you healed —
   its final step being unverified is expected, not a regression.
-- You will continue this process until the test runs successfully without any failures or errors.
-- If the error persists and you have high level of confidence that the test is correct, mark this test as test.fixme()
-  so that it is skipped during the execution. Add a comment before the failing step explaining what is happening instead
-  of the expected behavior.
-- Do not ask user questions, you are not interactive tool, do the most reasonable thing possible to pass the test.
+- Continue until each healable test passes with only its locators changed.
+- If a healable test still fails once its locators resolve, the product is the likely cause: stop and
+  report it as a finding. Never `test.fixme()`, skip or weaken a test, and never write a
+  `governed-skip:` / `governed-change:` note; those are a person's decision.
+- Do not ask user questions; you are not an interactive tool. Where the evidence does not decide it,
+  leave the test unchanged and report it.
 - Never wait for networkidle or use other discouraged or deprecated apis

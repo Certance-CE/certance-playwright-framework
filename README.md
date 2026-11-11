@@ -26,6 +26,7 @@ The framework's whole argument is evidence over green, so this README holds itse
 | The framework's own pure logic survives mutation testing at 70 percent                                                                                                      | `npm run test:mutation`                          |
 | An agent cannot mute a test, delete an assertion, change an expected value, or lower or delete a requirement's priority without a written reason: CI fails the pull request | `npx vitest run unit/governed-skip.unit.test.ts` |
 | Every failure is classified before anything touches it: product defect (a finding), test defect (the only kind an agent may heal), environment, flake                       | `npm run triage`                                 |
+| The healer may change locators only, on test defects only: a product regression is refused and reported as a finding                                                        | `npm run heal:check`                             |
 | A fresh clone points at your application and runs green in under a minute, with no credentials                                                                              | `npm run init -- --url <your app>`               |
 
 **After `npm run setup`** (starts a real application locally):

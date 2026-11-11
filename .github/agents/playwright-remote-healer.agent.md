@@ -58,6 +58,9 @@ using the same systematic approach as the local Healer agent.
    - Read `test-results/results.json` from the downloaded artifacts
    - Extract: test name, file path, error message, stack trace, browser project
    - Build a prioritised list of failing tests
+   - Run triage on it: `TRIAGE_RESULTS=tmp/remote-traces/[path]/results.json npm run triage`.
+     Only failures whose `healable` is true (class `test`) are yours to fix; a `product`
+     failure is a finding, reported and never healed (ADR-013)
 
 ### Phase 2 — Diagnose locally
 
@@ -71,11 +74,11 @@ using the same systematic approach as the local Healer agent.
    - When you do open a trace, announce: "Opening trace for [test name] — this
      shows exactly what the browser saw during the CI run"
    - Instruct the user to run: `npx playwright show-trace tmp/remote-traces/[path]/trace.zip`
-   - Read the error message and stack trace to identify the failure type:
-     - **Locator failure** → element selector changed in the app
-     - **Assertion failure** → expected value no longer matches
-     - **Timeout** → element never appeared (possible loading regression)
-     - **Navigation failure** → URL or redirect changed
+   - Read the error message and stack trace to confirm triage's class:
+     - **Locator failure** → element selector changed in the app (`test`: heal it)
+     - **Assertion failure** → expected value no longer matches (`product`: report it)
+     - **Timeout** → element never appeared (`test` or a loading regression: confirm which)
+     - **Navigation failure** → URL or redirect changed (`environment`: rerun it)
 
 6. **Reproduce locally** (when possible)
    - Run the specific failing test via `test_debug` using its exact test title
@@ -95,22 +98,20 @@ using the same systematic approach as the local Healer agent.
    - If the local environment differs from CI, annotate the fix with a comment
      explaining the assumption
 
-9. **Mark unresolvable failures**
-   - If a test cannot be fixed without CI environment access, mark it
-     `test.fixme()` with a comment:
-     ```typescript
-     // Remote healer: failed in CI run #[RUN_ID] with "[error message]"
-     // Cannot reproduce locally — [reason]. Investigate in staging environment.
-     test.fixme();
-     ```
+9. **Check your authority, and report what you cannot fix**
+   - Run `npm run heal:check` (ADR-014). If it refuses, stop and report what it refused
+   - If a test cannot be fixed without CI environment access, leave it unchanged and
+     report it with the run ID and error. Never `test.fixme()` or skip it: a muted test
+     hides the failure the run found
 
 ### Phase 4 — Report
 
 10. **Summarise all changes made**, grouped by:
     - Fixed (locally verified)
     - Fixed (trace-only, needs CI verification)
-    - Marked fixme (needs manual investigation)
-    - Skipped (unrelated to test code)
+    - Findings (product failures, reported, not healed)
+    - Not fixed (needs a person or CI access)
+    - Skipped (environment or flake: rerun, not edited)
 
 ---
 
@@ -120,7 +121,7 @@ using the same systematic approach as the local Healer agent.
   cheapest ground truth. Open `trace.zip` only when the snapshot is insufficient
 - **One fix at a time** — fix, verify, move to next; never batch-fix without testing
 - **CI environment awareness** — note when a fix assumes the local env matches CI
-- **Preserve intent** — fix the locator/assertion, never weaken or remove the test
+- **Preserve intent** — fix the locator, never the assertion; never weaken, mute or remove the test
 - **Session safety** — the TodoMVC reference app has no login, so this does not
   apply to it. But when the app under test authenticates from a shared session /
   `storageState`, some scenarios are session-destructive (log out / sign out,

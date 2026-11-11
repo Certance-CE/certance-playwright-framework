@@ -23,7 +23,7 @@ A claim of enforcement that nothing checks is the thing this page exists to prev
 | 7   | Synthetic data only, never real PII               | **Lint**              | bans literal email addresses and direct `faker` imports                                                                                                                                |
 | 8   | One scenario per test                             | _Review_              | not decidable — see below                                                                                                                                                              |
 | 9   | Trace reviewed before committing                  | _Config + review_     | `trace: 'retain-on-failure'` is configured; reviewing it is a habit                                                                                                                    |
-| 10  | Healer owns locator fixes                         | _CI gate (planned)_   | needs a diff-aware gate — see below                                                                                                                                                    |
+| 10  | Healer owns locator fixes                         | **Gate + check**      | `gate:skips` blocks a mute or a weakened assertion in any diff; `triage` + `heal:check` hold the healer to locators on `test` failures — see below                                     |
 | 11  | Page Objects injected, never `new`ed              | **Lint**              | bans `new SomethingPage(...)` in test code                                                                                                                                             |
 | 12  | Application-agnostic core                         | **Lint**              | bans `pages/`/`features/` imports **and** application names in `utils/` and `fixtures/`                                                                                                |
 
@@ -40,9 +40,17 @@ property of the code, and a lint rule that pretended otherwise would be theatre.
 
 **#10 — healer owns locator fixes.** Enforcing this needs to see a _diff_: a test
 newly skipped, an `expect` removed, an assertion literal changed in a file the healer
-touched. A linter sees one file at a time with no history. This belongs in the
-governed-loop CI gate (Wave 3), and until that exists the rule is a convention, not
-a control.
+touched. A linter sees one file at a time with no history, so this is enforced at the
+diff instead, in three parts:
+
+- the integrity gate (`npm run gate:skips`, ADR-009) refuses a mute or a weakened
+  assertion in any pull request;
+- triage (`npm run triage`, ADR-013) decides which failures are test defects;
+- `npm run heal:check` (ADR-014) refuses a healer's change that touches anything
+  but locators, or any failure that is not a test defect.
+
+The heal check runs where the healer runs, against that run's triage. CI does not yet
+see which change a healer made; that comes with provenance.
 
 ## Two deliberate exceptions
 
