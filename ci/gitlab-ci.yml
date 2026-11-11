@@ -47,6 +47,7 @@ unit:
   script:
     - npm ci
     - if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then GOVERNED_SKIP_BASE="$CI_MERGE_REQUEST_DIFF_BASE_SHA" npm run gate:skips; fi
+    - if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then PROVENANCE_BASE="$CI_MERGE_REQUEST_DIFF_BASE_SHA" npm run provenance; fi
     - npm run test:unit
     - npm run test:mutation
   artifacts:

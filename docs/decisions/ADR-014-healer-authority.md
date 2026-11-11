@@ -84,9 +84,9 @@ without a person writing the change, so it gets no waiver and a scope of one lay
 
 **Negative / trade-offs:**
 
-- The check runs where the healer runs. CI enforces the gate on every pull request but cannot yet
-  tell a healer's change from anyone else's. Provenance (the next part of the loop) gives a heal a
-  record of the triage it acted on, and CI can then run this check on it.
+- The check runs where the healer runs. CI could not at first tell a healer's change from anyone
+  else's. Since ADR-015 a heal commits the triage it acted on and declares itself, and CI runs this
+  check on it from that record.
 - Repointing a locator inside an assertion keeps the claim but may change what it is about. That is
   the same power as repointing `this.add = …`, and the human review reads it.
 - The integrity gate still does not read feature files, so a person or the generator changing a

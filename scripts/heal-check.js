@@ -38,6 +38,8 @@ const TRIAGE = process.env.TRIAGE_JSON || path.join(ROOT, 'test-results/triage.j
 
 // The locator layer: Page Objects. A healable failure's own spec file is added per run.
 const LOCATOR_LAYER = /^pages\//;
+// The triage record a heal commits as its provenance (ADR-015): evidence, not a change to a test.
+const HEAL_RECORD = /^provenance\/[^/]+\.json$/;
 const ASSERTION = /\bexpect(?:\.soft|\.poll)?\s*\(/;
 
 /**
@@ -101,7 +103,8 @@ function checkHeal(items, diff) {
   const specs = healable.map((i) => specPath(i.file)).filter(Boolean);
   const inScope = (file) => LOCATOR_LAYER.test(file) || specs.some((s) => file === s || file.endsWith(`/${s}`));
 
-  const lines = changes(diff);
+  // The record holds Playwright's failure text, `expect(` lines included: it is read, not scanned.
+  const lines = changes(diff).filter((c) => !HEAL_RECORD.test(c.file));
   const outOfScope = new Set();
   const removedAsserts = [];
   const addedAsserts = [];

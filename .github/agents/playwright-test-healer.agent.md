@@ -53,6 +53,9 @@ Your workflow:
 7. **Iteration**: Repeat the investigation and fixing process until the test passes cleanly
 8. **Authority check**: run `npm run heal:check` (ADR-014). If it refuses, stop and report what it
    refused; do not reshape the change until it passes
+9. **Provenance**: run `npm run provenance -- record`, commit the triage record it writes with the
+   heal, and end the commit message with the `Provenance:` trailer it prints (ADR-015). Never write
+   `Provenance: human` or `Reviewed-By:`
 
 Key principles:
 

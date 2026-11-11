@@ -49,8 +49,9 @@ diff instead, in three parts:
 - `npm run heal:check` (ADR-014) refuses a healer's change that touches anything
   but locators, or any failure that is not a test defect.
 
-The heal check runs where the healer runs, against that run's triage. CI does not yet
-see which change a healer made; that comes with provenance.
+The heal check runs where the healer runs, against that run's triage. A heal commits
+that triage and declares itself (`npm run provenance`, ADR-015), so CI runs the same
+check on the pull request.
 
 ## Two deliberate exceptions
 

@@ -22,6 +22,7 @@ export default {
     'utils/totp.ts',
     'scripts/triage.js',
     'scripts/heal-check.js',
+    'scripts/provenance.js',
   ],
   reporters: ['html', 'clear-text', 'progress'],
   htmlReporter: { fileName: 'reports/mutation/index.html' },
