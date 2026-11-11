@@ -72,6 +72,30 @@ stages:
   - stage: suite
     dependsOn: []
     jobs:
+      # Golden rule 4, checked: the suite in a shuffled order, under fixed seeds. A failure
+      # names the seed that reproduces it: `npm run test:shuffled -- <seed>`.
+      - job: order
+        displayName: Order independence
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          matrix:
+            seed101: { SEED: '101' }
+            seed202: { SEED: '202' }
+            seed303: { SEED: '303' }
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '24.x'
+          - script: npm ci
+            displayName: Install dependencies
+          - script: npx playwright install --with-deps chromium
+            displayName: Install the browser
+          - script: npm run setup:app
+            displayName: Prepare the application under test
+          - script: npm run test:shuffled -- $(SEED)
+            displayName: Run the suite in a shuffled order
+
       - job: suite
         displayName: The suite, and the quality report
         pool:

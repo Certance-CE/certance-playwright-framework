@@ -108,7 +108,7 @@ jobs:
       - name: Prepare the application under test
         run: npm run setup:app
       - name: Run the suite in a shuffled order
-        run: npm run bdd:gen && npx playwright test --shuffle ${{ matrix.seed }}
+        run: npm run test:shuffled -- ${{ matrix.seed }}
 
   bdd:
     name: BDD (self-hosted app + TodoMVC)

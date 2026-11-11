@@ -290,18 +290,39 @@ suite, so adding the secret is the whole change. A captured session lasts as lon
 identity provider lets it, often days or weeks: recapture on that rhythm, and prefer a test
 account with an authenticator secret (4c) where the organisation allows one.
 
-## 5. Auth state expiry
+## 5. Auth state expiry, during a run
 
-Storage state files expire when session cookies expire. Signs of expiry:
+A saved session can die **in the middle of a run**, and when it does, everything after it
+fails at once: pages time out loading, the API answers 401, and the order the tests ran in
+seems to matter. Rerunning setup does not help, because the session was fine when setup saved
+it.
 
-- Tests that navigate to the app land on the login page instead of the app
-- `assertWorkspaceLoaded()` times out
+The mechanism, measured on the reference application (2026-11-11), and common wherever
+sessions follow current security practice:
 
-**Fix:** re-run the setup project (`npx playwright test --project=setup`), or just re-run the
-suite — setup is a declared dependency and refreshes the state automatically.
+- the **access token is short-lived** (Vikunja: 10 minutes);
+- the **refresh token works once**: the server rotates it, and the old one is refused
+  (`401 Invalid or expired refresh token`);
+- and **every test starts from the one session setup saved**.
 
-Because setup is declared as a dependency of the projects that need it, CI needs no separate
-seed job — Playwright orders it.
+So the first test whose page refreshes the token uses up the refresh cookie everyone holds.
+Once the access token runs out, every later test is signed out. A run shorter than the token's
+lifetime never shows it, which is why it hides until a suite grows or a machine is slow. The
+reference suite passed in its usual order in a minute; shuffled on a loaded machine, a run took
+35 minutes and 22 tests failed.
+
+**What to do, in order of preference:**
+
+1. **Give the test environment a session that outlives a run.** Most applications make the
+   access token's lifetime configurable; the reference application sets two hours
+   (`VIKUNJA_SERVICE_JWTTTLSHORT` in `app.config.ts`). It is a setting of the test environment; the application itself is unchanged.
+2. **Keep a run inside the token's lifetime**: shard the suite (`skills/ci/sharding.md`) so
+   no shard outlives it.
+3. **Sign in once per worker** if the application's sign-in rate limit allows it. The reference application's does not (about 8 per minute per address).
+
+**How to spot it**: run the suite shuffled (`npm run test:shuffled -- <seed>`; CI runs three
+seeds on every pull request). A suite that passes in one order and fails in another,
+with 401s and page timeouts rather than wrong values, is this.
 
 ---
 
