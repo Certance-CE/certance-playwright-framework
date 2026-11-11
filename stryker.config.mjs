@@ -23,6 +23,7 @@ export default {
     'scripts/triage.js',
     'scripts/heal-check.js',
     'scripts/provenance.js',
+    'scripts/eval-healer.js',
   ],
   reporters: ['html', 'clear-text', 'progress'],
   htmlReporter: { fileName: 'reports/mutation/index.html' },

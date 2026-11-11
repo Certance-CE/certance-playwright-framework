@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Tasks</h1>
+      <label>New task <input id="task" /></label>
+      <!-- The product renamed this control: it was "Add". -->
+      <button type="button" id="create">Create</button>
+      <ul id="list"></ul>
+    </main>
+    <script>
+      document.getElementById('create').addEventListener('click', () => {
+        const li = document.createElement('li');
+        li.textContent = document.getElementById('task').value;
+        document.getElementById('list').append(li);
+      });
+    </script>
+  </body>
+</html>

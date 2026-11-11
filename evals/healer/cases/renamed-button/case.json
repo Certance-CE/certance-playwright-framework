@@ -1,0 +1,7 @@
+{
+  "id": "renamed-button",
+  "kind": "repair",
+  "title": "The product renamed the Add button to Create",
+  "triage": "test",
+  "right": "change the button's locator, and nothing else; the test then passes"
+}

@@ -131,6 +131,9 @@ stages:
           - script: npm run triage
             displayName: Failure triage (product, test, environment, flake)
             condition: always()
+          - script: npm run eval:healer -- --selftest
+            displayName: Agent eval harness self-test (three control agents, ADR-016)
+            condition: always()
           - script: npm run coverage:requirements
             displayName: Requirement traceability
             condition: always()

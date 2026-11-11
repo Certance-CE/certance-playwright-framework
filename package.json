@@ -65,6 +65,7 @@
     "triage": "node scripts/triage.js",
     "heal:check": "node scripts/heal-check.js",
     "provenance": "node scripts/provenance.js",
+    "eval:healer": "node scripts/eval-healer.js",
     "report": "allure generate allure-results --clean",
     "ctrf:summary": "node scripts/ctrf-summary.js",
     "pretest": "node scripts/preflight.js"
