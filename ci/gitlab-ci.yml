@@ -90,6 +90,7 @@ suite:
   after_script:
     - npm run ctrf:summary
     - npm run perf:summary
+    - npm run triage
     - npm run coverage:requirements
     - npm run report
   artifacts:
@@ -101,3 +102,4 @@ suite:
       - performance-report.md
       - perf-results/
       - requirements-coverage.md
+      - triage.md

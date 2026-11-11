@@ -25,6 +25,7 @@ The framework's whole argument is evidence over green, so this README holds itse
 | Each of those rules is unit-tested against code that breaks it, so a rule that quietly stops firing fails the build                                                         | `npm run test:unit`                              |
 | The framework's own pure logic survives mutation testing at 70 percent                                                                                                      | `npm run test:mutation`                          |
 | An agent cannot mute a test, delete an assertion, change an expected value, or lower or delete a requirement's priority without a written reason: CI fails the pull request | `npx vitest run unit/governed-skip.unit.test.ts` |
+| Every failure is classified before anything touches it: product defect (a finding), test defect (the only kind an agent may heal), environment, flake                       | `npm run triage`                                 |
 | A fresh clone points at your application and runs green in under a minute, with no credentials                                                                              | `npm run init -- --url <your app>`               |
 
 **After `npm run setup`** (starts a real application locally):

@@ -123,6 +123,9 @@ stages:
           - script: npm run perf:summary
             displayName: Performance budgets
             condition: always()
+          - script: npm run triage
+            displayName: Failure triage (product, test, environment, flake)
+            condition: always()
           - script: npm run coverage:requirements
             displayName: Requirement traceability
             condition: always()
