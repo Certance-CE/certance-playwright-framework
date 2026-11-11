@@ -185,6 +185,14 @@ jobs:
         if: always()
         run: npm run coverage:requirements
 
+      # Agent evals (ADR-016): the harness runs three control agents (one does nothing, one
+      # heals within its authority, one cheats) on the frozen cases and fails unless it scores
+      # each exactly right. No model and no key: this proves the scoring. The real healer is
+      # evaluated on demand (`npm run eval:healer`), after every tooling upgrade.
+      - name: Agent eval harness self-test
+        if: always()
+        run: npm run eval:healer -- --selftest
+
       # The customer-facing report: one HTML file with the results by business area, every
       # failure's trace, the traceability matrix, the performance table and the trend.
       # History rides in the Actions cache: a branch continues its own, a new branch

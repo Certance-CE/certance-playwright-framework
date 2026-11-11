@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <body>
+    <main>
+      <h1>Tasks</h1>
+      <label>New task <input id="task" /></label>
+      <button type="button" id="add">Add</button>
+      <ul id="list"></ul>
+    </main>
+    <script>
+      // The product defect: one click stores the task twice.
+      document.getElementById('add').addEventListener('click', () => {
+        for (let i = 0; i < 2; i++) {
+          const li = document.createElement('li');
+          li.textContent = document.getElementById('task').value;
+          document.getElementById('list').append(li);
+        }
+      });
+    </script>
+  </body>
+</html>

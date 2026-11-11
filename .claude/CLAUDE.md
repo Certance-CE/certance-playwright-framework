@@ -80,3 +80,7 @@ or a requirement carries a trailer. An agent writes
 `npm run provenance -- record` after `heal:check` passes, commits the triage record it
 writes, and uses the trailer it prints. A commit with no trailer fails CI: unknown
 provenance is not assumed human.
+
+**The agents are evaluated** (`npm run eval:healer`, ADR-016, `evals/README.md`). Frozen cases
+with known right answers, including ones where the right answer is to change nothing, scored by
+the checks above. Rerun them after any Playwright, model or agent-brief change.

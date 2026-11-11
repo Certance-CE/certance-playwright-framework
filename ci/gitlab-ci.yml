@@ -88,6 +88,7 @@ suite:
     - npx playwright install --with-deps chromium
     - npm run setup:app
     - npm test
+    - npm run eval:healer -- --selftest # agent eval harness: scores three control agents (ADR-016)
   after_script:
     - npm run ctrf:summary
     - npm run perf:summary
