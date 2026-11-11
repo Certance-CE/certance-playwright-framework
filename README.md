@@ -27,6 +27,7 @@ The framework's whole argument is evidence over green, so this README holds itse
 | An agent cannot mute a test, delete an assertion, change an expected value, or lower or delete a requirement's priority without a written reason: CI fails the pull request | `npx vitest run unit/governed-skip.unit.test.ts` |
 | Every failure is classified before anything touches it: product defect (a finding), test defect (the only kind an agent may heal), environment, flake                       | `npm run triage`                                 |
 | The healer may change locators only, on test defects only: a product regression is refused and reported as a finding                                                        | `npm run heal:check`                             |
+| A change to a test, Page Object, feature or requirement says who wrote it; unknown authorship fails the pull request, and a heal is checked against the triage it carries   | `npm run provenance`                             |
 | A fresh clone points at your application and runs green in under a minute, with no credentials                                                                              | `npm run init -- --url <your app>`               |
 
 **After `npm run setup`** (starts a real application locally):

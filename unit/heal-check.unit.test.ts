@@ -162,6 +162,16 @@ describe('heal:check — scope: the locator layer only', () => {
     expect(checkHeal(two, diff('tests/a.spec.ts', ['  a'], ['  b'])).allowed).toBe(true);
   });
 
+  it('the triage record a heal commits (provenance/*.json) is in scope; a nested one is not', () => {
+    expect(checkHeal(only('test'), diff('provenance/heal-1.json', [], ['[]'])).allowed).toBe(true);
+    // A real record carries failure text with expect( in it; that is evidence, not an assertion.
+    const record = JSON.stringify(only('test'), null, 2).split('\n');
+    expect(record.some((l: string) => /expect\(/.test(l))).toBe(true);
+    expect(checkHeal(only('test'), [RENAME, diff('provenance/heal-1.json', [], record)].join('\n')).allowed).toBe(true);
+    expect(rules(checkHeal(only('test'), diff('provenance/x/heal.json', [], ['[]'])))).toEqual(['out of scope']);
+    expect(rules(checkHeal(only('test'), diff('provenance/heal.md', [], ['x'])))).toEqual(['out of scope']);
+  });
+
   it('pages/ only at the repo root: a nested pages folder is not the locator layer', () => {
     expect(rules(checkHeal(only('test'), diff('src/pages/x.ts', ['a'], ['b'])))).toEqual(['out of scope']);
   });

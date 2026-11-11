@@ -100,6 +100,8 @@ using the same systematic approach as the local Healer agent.
 
 9. **Check your authority, and report what you cannot fix**
    - Run `npm run heal:check` (ADR-014). If it refuses, stop and report what it refused
+   - Run `npm run provenance -- record`; commit the record with the heal and end the commit
+     message with the `Provenance:` trailer it prints (ADR-015)
    - If a test cannot be fixed without CI environment access, leave it unchanged and
      report it with the run ID and error. Never `test.fixme()` or skip it: a muted test
      hides the failure the run found

@@ -64,6 +64,7 @@
     "perf:summary": "node scripts/perf-summary.js",
     "triage": "node scripts/triage.js",
     "heal:check": "node scripts/heal-check.js",
+    "provenance": "node scripts/provenance.js",
     "report": "allure generate allure-results --clean",
     "ctrf:summary": "node scripts/ctrf-summary.js",
     "pretest": "node scripts/preflight.js"

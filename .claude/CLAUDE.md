@@ -71,3 +71,12 @@ change what an `expect(` claims; repointing the locator inside one is allowed. A
 not mute a test or write a `governed-` note. A refused check means stop and report: the
 change is not made smaller until it passes. Where the stock healer brief says to fix
 assertions or expected values, or to `test.fixme()` a test, **this rule wins**.
+
+**Every change to what the suite checks says who wrote it** (`npm run provenance`,
+ADR-015). A commit that touches a test lane, `pages/`, a feature file, a step definition
+or a requirement carries a trailer. An agent writes
+`Provenance: agent=<name>; input=<what it worked from>; tool=<package@version>`, and never
+`Provenance: human` or `Reviewed-By:`, which are a person's to write. A healer runs
+`npm run provenance -- record` after `heal:check` passes, commits the triage record it
+writes, and uses the trailer it prints. A commit with no trailer fails CI: unknown
+provenance is not assumed human.

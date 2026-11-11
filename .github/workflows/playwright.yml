@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read # provenance reads the pull request's approvals
 
 jobs:
   # Fast, no-browser gate: golden-rule lint + type safety.
@@ -60,6 +61,19 @@ jobs:
         env:
           GOVERNED_SKIP_BASE: ${{ github.event.pull_request.base.sha }}
         run: npm run gate:skips
+      # Provenance (ADR-015): a commit that changes a test, Page Object, feature or requirement
+      # says who wrote it; unknown fails closed, and a heal is held to the triage it committed.
+      # Pull requests only. An approval from anyone but the author counts as review.
+      - name: Provenance
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROVENANCE_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_URL: repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          export PROVENANCE_APPROVERS="$(gh api "$PR_URL" --jq "[.[] | select(.state == \"APPROVED\" and .user.login != \"$PR_AUTHOR\") | .user.login] | unique | join(\",\")" || true)"
+          npm run provenance
       - run: npm run test:unit
       - run: npm run test:mutation
 

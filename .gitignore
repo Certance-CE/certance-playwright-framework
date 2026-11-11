@@ -44,3 +44,4 @@ stryker.log
 /.bin/
 /allure-history/
 /triage.md
+/provenance.md

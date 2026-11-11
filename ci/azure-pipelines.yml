@@ -64,6 +64,11 @@ stages:
             condition: eq(variables['Build.Reason'], 'PullRequest')
             env:
               GOVERNED_SKIP_BASE: origin/$(System.PullRequest.TargetBranchName)
+          - script: npm run provenance
+            displayName: Provenance (who wrote each change to what the suite checks)
+            condition: eq(variables['Build.Reason'], 'PullRequest')
+            env:
+              PROVENANCE_BASE: origin/$(System.PullRequest.TargetBranchName)
           - script: npm run test:unit
             displayName: Unit tests
           - script: npm run test:mutation
