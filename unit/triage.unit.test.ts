@@ -301,6 +301,21 @@ describe('triage report — what a person reads', () => {
     expect(out).toContain('| a \\| b | medium | r | `x \\| y');
     expect(out.split('\n').find((l: string) => l.startsWith('| a'))!.length).toBeLessThan(200);
   });
+
+  it('escapes a backslash before a pipe, and a backtick cannot end the evidence code span', () => {
+    const out = render([
+      {
+        title: 'a \\| b',
+        class: 'product',
+        confidence: 'medium',
+        reason: 'r',
+        evidence: 'C:\\x | `y`',
+        healable: false,
+      },
+    ]);
+    // `\|` in the input becomes `\\\|`: the backslash is literal and the pipe still escaped.
+    expect(out).toContain("| a \\\\\\| b | medium | r | `C:\\\\x \\| 'y'` |");
+  });
 });
 
 describe('triage — each signal on its own', () => {

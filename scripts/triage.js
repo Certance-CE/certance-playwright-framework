@@ -146,6 +146,9 @@ const HEADING = {
   unclassified: '❓ Unclassified: a person looks',
 };
 
+/** A table cell: backslashes first, then the pipe that would end the cell; no backtick ends the code span. */
+const cell = (s) => String(s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+
 function render(items) {
   const count = (c) => items.filter((i) => i.class === c).length;
   let md = '# Failure triage\n\n';
@@ -158,8 +161,8 @@ function render(items) {
     if (!group.length) continue;
     md += `\n## ${HEADING[c]}\n\n| Test | Confidence | Why | Evidence |\n|---|---|---|---|\n`;
     for (const i of group) {
-      const ev = i.evidence.replace(/\|/g, '\\|').slice(0, 140);
-      md += `| ${i.title.replace(/\|/g, '\\|')} | ${i.confidence} | ${i.reason} | \`${ev}\` |\n`;
+      const ev = cell(i.evidence.slice(0, 140).replace(/`/g, "'"));
+      md += `| ${cell(i.title)} | ${i.confidence} | ${i.reason} | \`${ev}\` |\n`;
     }
   }
   return md;
